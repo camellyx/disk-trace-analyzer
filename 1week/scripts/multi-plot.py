@@ -22,11 +22,13 @@ def to_percent(y, position=0):
         return s + '%'
 
 sns.set_style({"font.family": "sans-serif"})
+fsize = 16
 
 # find all files
-f, axes = plt.subplots(4, 5, figsize = (16,8), sharex=True, sharey=True)
-plt.subplots_adjust(hspace=0.4)
+f, axes = plt.subplots(4, 5, figsize = (12,8), sharex=True, sharey=True)
+plt.subplots_adjust(hspace=0.3, wspace=0.1)
 files = glob.glob("*.csv")
+files = sorted(files)
 fx = 0
 fy = 0
 for filename in files:
@@ -61,12 +63,13 @@ for filename in files:
     #axes[fx,fy].plot(x0,y0_day,label=filename) # line plot
     sns.barplot(x0,y0_day, ci=None, hline = 0, ax=axes[fy,fx])
     #plt.gca().yaxis.set_major_formatter(FuncFormatter(to_percent))
-    axes[fy,fx].set_title(filename[9:-4])
+    axes[fy,fx].set_title(filename[9:-4].replace("msrcambridge","msrcamb"), fontsize=fsize)
+    axes[fy,fx].tick_params(axis='both', labelsize=fsize)
     #axes[fy,fx].ticklabel_format(axis='y', style='sci', scilimits=(2,2))
     if (fx == 0):
-        axes[fy,fx].set_ylabel("percentage")
+        axes[fy,fx].set_ylabel("percentage", fontsize=fsize)
     if (fy == 3):
-        axes[fy,fx].set_xlabel("days")
+        axes[fy,fx].set_xlabel("days", fontsize=fsize)
     if (maxx == 0):
         axes[fy,fx].set_ylim(0,100)
     fx += 1
