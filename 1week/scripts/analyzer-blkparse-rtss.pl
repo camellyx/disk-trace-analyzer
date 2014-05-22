@@ -20,6 +20,7 @@ my $block_start = 0; # start hour
 
 # Tracking retention time
 my %last_write;
+my %last_read;
 
 # Statistics
 my %write_intervals;
@@ -70,7 +71,7 @@ while (1) {
       }
 
       # Take actions
-      if ($type eq $WRITE) {
+      if (lc $type eq lc $WRITE) {
         if ($cur_page == 0) {
           $block_start = $cur_hour;
         }
@@ -86,21 +87,28 @@ while (1) {
         }
         while ($size > 0) {
           $last_write{$block/$PAGE_SIZE} = $cur_hour;
+          $last_read{$block/$PAGE_SIZE} = $cur_hour;
           $size -= $PAGE_SIZE;
           $block += $PAGE_SIZE;
         }
-      } elsif ($type eq $READ) {
+      } elsif (lc $type eq lc $READ) {
         while ($size > 0) {
           my $write_time = 0;
+          my $read_time = 0;
           if (exists($last_write{$block/$PAGE_SIZE})) {
             $write_time = $last_write{$block/$PAGE_SIZE};
+            $read_time = $last_read{$block/$PAGE_SIZE};
           }
-          my $retention = $cur_hour - $write_time;
+          my $retention = 10000 * ($cur_hour - $write_time) + ($cur_hour - $read_time);
+          $last_read{$block/$PAGE_SIZE} = $cur_hour;
           #print "$retention\n";
           $retentions{$retention} ++;
           $size -= $PAGE_SIZE;
           $block += $PAGE_SIZE;
         }
+      } else {
+        print STDERR "Unknown access type: $type\n";
+        exit 1;
       }
     } # end FILE
     close(FILE);
