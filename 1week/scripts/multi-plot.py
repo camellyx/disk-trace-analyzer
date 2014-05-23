@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-import seaborn as sns
+#import seaborn as sns
 import matplotlib.pyplot as plt
 import csv as csv
 import sys as sys
@@ -21,8 +21,8 @@ def to_percent(y, position=0):
     else:
         return s + '%'
 
-sns.set_style({"font.family": "sans-serif"})
-fsize = 16
+#sns.set_style({"font.family": "sans-serif"})
+fsize = 10
 
 # find all files
 f, axes = plt.subplots(4, 5, figsize = (12,8), sharex=True, sharey=True)
@@ -61,7 +61,8 @@ for filename in files:
     y0_day = np.asarray(y0_day)
     print x0, y0_day
     #axes[fx,fy].plot(x0,y0_day,label=filename) # line plot
-    sns.barplot(x0,y0_day, ci=None, hline = 0, ax=axes[fy,fx])
+    #sns.barplot(x0,y0_day, ci=None, hline = 0, ax=axes[fy,fx])
+    axes[fy,fx].bar(x0,y0_day,width=0.3)
     #plt.gca().yaxis.set_major_formatter(FuncFormatter(to_percent))
     axes[fy,fx].set_title(filename[9:-4].replace("msrcambridge","msrcamb"), fontsize=fsize)
     axes[fy,fx].tick_params(axis='both', labelsize=fsize)
@@ -72,6 +73,7 @@ for filename in files:
         axes[fy,fx].set_xlabel("days", fontsize=fsize)
     if (maxx == 0):
         axes[fy,fx].set_ylim(0,100)
+        axes[fy,fx].set_xlim(0.5,4.5)
     fx += 1
     if (fx == 5):
         fx = 0

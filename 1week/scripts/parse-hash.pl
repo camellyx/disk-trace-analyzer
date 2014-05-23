@@ -18,7 +18,7 @@ if ($ARGV[1] eq "wri") {
       my $hour = $fields[1];
       my $count = $fields[2];
       my $day = ($hour == 0) ? 0 : int(($hour-1)/24);
-      print "$day,$count\n";
+      print "$hour,$count\n";
       #print STDERR "$hour hours to $day days\n";
     }
   }
