@@ -87,6 +87,6 @@ for filename in files:
 #plt.yscale('log')
 #plt.legend()
 #sns.tsplot(gammas, "timepoint", "subject", "ROI", "BOLD signal")
-plt.xticks(x0 + bwidth/2, x0)
+plt.xticks(x0 + bwidth/2, [1,2,3,'4+'])
 plt.savefig("multi-plot.pdf", format='pdf')
 sys.exit(0)
