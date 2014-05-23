@@ -22,7 +22,8 @@ def to_percent(y, position=0):
         return s + '%'
 
 #sns.set_style({"font.family": "sans-serif"})
-fsize = 10
+fsize = 10 # font size
+bwidth = 0.5 # bar width
 
 # find all files
 f, axes = plt.subplots(4, 5, figsize = (12,8), sharex=True, sharey=True)
@@ -62,10 +63,14 @@ for filename in files:
     print x0, y0_day
     #axes[fx,fy].plot(x0,y0_day,label=filename) # line plot
     #sns.barplot(x0,y0_day, ci=None, hline = 0, ax=axes[fy,fx])
-    axes[fy,fx].bar(x0,y0_day,width=0.3)
+    axes[fy,fx].bar(x0,y0_day,width=bwidth)
     #plt.gca().yaxis.set_major_formatter(FuncFormatter(to_percent))
     axes[fy,fx].set_title(filename[9:-4].replace("msrcambridge","msrcamb"), fontsize=fsize)
     axes[fy,fx].tick_params(axis='both', labelsize=fsize)
+    axes[fy,fx].tick_params(axis='x',which='both',bottom='off',top='off')
+    axes[fy,fx].tick_params(axis='y',which='both',left='off',right='off')
+    axes[fy,fx].spines['top'].set_visible(False)
+    axes[fy,fx].spines['right'].set_visible(False)
     #axes[fy,fx].ticklabel_format(axis='y', style='sci', scilimits=(2,2))
     if (fx == 0):
         axes[fy,fx].set_ylabel("percentage", fontsize=fsize)
@@ -82,5 +87,6 @@ for filename in files:
 #plt.yscale('log')
 #plt.legend()
 #sns.tsplot(gammas, "timepoint", "subject", "ROI", "BOLD signal")
+plt.xticks(x0 + bwidth/2, x0)
 plt.savefig("multi-plot.pdf", format='pdf')
 sys.exit(0)
