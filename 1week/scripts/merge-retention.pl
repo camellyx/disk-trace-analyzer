@@ -9,12 +9,16 @@ my @infiles
 /.csv$/            # Ends with a .pl
 } readdir(DIR);
 
+@infiles = sort @infiles;
+
 closedir(DIR);
 
-my @converted = ([days,1..7]);
+my @converted = ();
+my @retention = (retention_in_day);
+my @read_interv = (read_interval_in_day);
 
 foreach my $filename (@infiles) {
-  my @days = ($filename,(0)x7);
+  my @days = ($filename);
   $filename = $dir.$filename;
   #print "@@@ $filename\n";
   open(FILE, $filename) or die $!;
@@ -25,16 +29,20 @@ foreach my $filename (@infiles) {
       next;
     }
     my @fields = split(/,/);
-    $day = ($fields[0] == 0) ? 0 : int(($fields[0]-1)/24);
-    $days[$day+1] += int($fields[1]);
+    if ($#converted == 0) {
+      push(@retention,$fields[0]);
+      push(@read_interv,$fields[1]);
+    }
+    push(@days,$fields[-1]);
   }
   close(FILE);
   push(@converted, \@days);
 }
+@converted = (\@retention,\@read_interv,@converted);
 local $" = ', ';
 #print "@@@ $#converted\n";
 
-for (my $j=0; $j<=7; $j++) {
+for (my $j=0; $j<=$#retention; $j++) {
   for (my $i=0; $i<=$#converted; $i++) {
     #print "@{$converted[$i]}\n";
     print "$converted[$i][$j], ";

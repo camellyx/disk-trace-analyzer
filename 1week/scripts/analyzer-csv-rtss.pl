@@ -22,12 +22,15 @@ my $cur_page = 0; # currently written bytes within a block
 my $block_start = 0; # start hour
 
 # Tracking retention time
-my %last_write;
-my %last_read;
+#my %last_write;
+my $MAX_SIZE = 134217728;
+my @last_write = (0)x$MAX_SIZE;
 
 # Statistics
 my %write_intervals;
 my %retentions;
+
+my $max = int(0);
 
 while (1) {
   print STDERR "@@@@@@@@@@ cur_hour: $cur_hour\n";
@@ -50,6 +53,12 @@ while (1) {
     my $type = $fields[-4];
     my $size = $fields[-2];
     my $block = $fields[-3];
+    if ($block/$PAGE_SIZE > $MAX_SIZE) {
+      print STDERR "disk out of bound: $block\n";
+      print STDERR "$line\n";
+      exit -1;
+    }
+    if ($block > $max) { $max = $block; }
     if ($first_hour == 0) {
       $first_hour = int($fields[0] / 36000000000);
       $cur_hour = 0;
@@ -95,21 +104,19 @@ while (1) {
         }
       }
       while ($size > 0) {
-        $last_write{$block/$PAGE_SIZE} = $cur_hour;
-        $last_read{$block/$PAGE_SIZE} = $cur_hour;
+        #$last_write{$block/$PAGE_SIZE} = $cur_hour * 10000 + $cur_hour;
+        $last_write[$block/$PAGE_SIZE] = $cur_hour * 10000 + $cur_hour;
         $size -= $PAGE_SIZE;
         $block += $PAGE_SIZE;
       }
     } elsif (lc $type eq lc $READ) {
       while ($size > 0) {
         my $write_time = 0;
-        my $read_time = 0;
-        if (exists($last_write{$block/$PAGE_SIZE})) {
-          $write_time = $last_write{$block/$PAGE_SIZE};
-          $read_time = $last_read{$block/$PAGE_SIZE};
+        $write_time = $last_write[$block/$PAGE_SIZE];
+        my $retention = $cur_hour * 10000 + $cur_hour - $write_time;
+        if ($cur_hour > 0) {
+          $last_write[$block/$PAGE_SIZE] = int($write_time/10000) * 10000 + $cur_hour;
         }
-        my $retention = 10000 * ($cur_hour - $write_time) + ($cur_hour - $read_time);
-        $last_read{$block/$PAGE_SIZE} = $cur_hour;
         #print "$retention\n";
         $retentions{$retention} ++;
         $size -= $PAGE_SIZE;
@@ -129,5 +136,7 @@ print "write intervals: \n";
 print Dumper(\%write_intervals);
 print "retention times: \n";
 print Dumper(\%retentions);
+
+print "$max\n";
 
 exit 0;

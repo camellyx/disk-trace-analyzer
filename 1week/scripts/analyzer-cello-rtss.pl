@@ -5,7 +5,7 @@ use warnings;
 use Data::Dumper;
 
 # Constants for cello
-my $dir = '../ds-bzip2/';
+my $dir = '../../ds-bzip2/';
 my $READ = "F";
 my $WRITE= "T";
 my $BLOCK_SIZE = 256*8*1024; # block size = 256 KB
@@ -145,7 +145,7 @@ foreach my $folder (@sorted_dates) {
 local $" = "\n";
 print "write intervals: \n\n";
 print Dumper(\%write_intervals);
-  print "retention times: \n";
-  print Dumper(\%retentions);
+print "retention times: \n";
+print Dumper(\%retentions);
 
 exit 0;
