@@ -31,6 +31,7 @@ my %write_intervals;
 my %retentions;
 
 my $max = int(0);
+my $min = -1;
 
 while (1) {
   print STDERR "@@@@@@@@@@ cur_hour: $cur_hour\n";
@@ -59,6 +60,11 @@ while (1) {
       exit -1;
     }
     if ($block > $max) { $max = $block; }
+    if ($min == -1) {
+      $min = $block;
+    } elsif ($block < $min) {
+      $min = $block;
+    }
     if ($first_hour == 0) {
       $first_hour = int($fields[0] / 36000000000);
       $cur_hour = 0;
@@ -136,7 +142,28 @@ print "write intervals: \n";
 print Dumper(\%write_intervals);
 print "retention times: \n";
 print Dumper(\%retentions);
-
-print "$max\n";
+print "write time: \n";
+print "min max\n";
+print "$min $max\n{\n";
+my @write_times = (0)x8;
+for (my $i=0; $i<int($max/$PAGE_SIZE) + 1; $i++) {
+  my $retention_day = ($last_write[$i] >= 10000) ? int(($cur_hour - int($last_write[$i]/10000)) / 24) : 7;
+  if ($retention_day < 7 and $retention_day >= 0) {
+    $write_times[$retention_day] ++;
+  } else {
+    if ($retention_day < 0 or $retention_day > 7) {
+      print STDERR "retention_day: $cur_hour - $last_write[$i] = $retention_day\n";
+    }
+    $write_times[7] ++;
+  }
+}
+for (my $i=0; $i<8; $i++) {
+  if ($i != 7) {
+    print "$i,$write_times[$i]\n";
+  } else {
+    print "7+,$write_times[$i]\n";
+  }
+}
+print "};\n";
 
 exit 0;

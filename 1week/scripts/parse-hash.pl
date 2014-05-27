@@ -7,10 +7,24 @@ open(FILE, $ARGV[0]) or die $!;
 
 if ($ARGV[1] eq "wri") {
   # extract write intervals
+  my $start = 0;
   while (<FILE>) {
     chomp;
     my $line = $_;
-    if ($line =~ /retention\ times/) {
+    if ($start == 0) {
+      if ($line =~ /write\ intervals/) {
+        $start = 1;
+      }
+    }
+    if ($start == 1) {
+      if ($line =~ /{/) {
+        $start = 2;
+      }
+    }
+    if ($start != 2) {
+      next;
+    }
+    if ($line =~ /};/) {
       last;
     }
     my @fields = split(/['\ =>\ ,]+/, $line);
@@ -22,7 +36,7 @@ if ($ARGV[1] eq "wri") {
       #print STDERR "$hour hours to $day days\n";
     }
   }
-} else {
+} elsif ($ARGV[1] eq "ret") {
   # extract retention times
   my $start = 0;
   my @results = (0)x64;
@@ -33,7 +47,17 @@ if ($ARGV[1] eq "wri") {
       if ($line =~ /retention\ times/) {
         $start = 1;
       }
+    }
+    if ($start == 1) {
+      if ($line =~ /{/) {
+        $start = 2;
+      }
+    }
+    if ($start != 2) {
       next;
+    }
+    if ($line =~ /};/) {
+      last;
     }
     my @fields = split(/['\ =>\ ,]+/, $line);
     if ($#fields >= 2) {
@@ -57,6 +81,8 @@ if ($ARGV[1] eq "wri") {
       print STDERR "look at $ARGV[0]\n";
     }
   }
+} elsif ($ARGV[1] eq "res") {
+
 }
 
 
