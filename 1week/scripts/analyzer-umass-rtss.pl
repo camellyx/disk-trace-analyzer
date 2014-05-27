@@ -29,6 +29,9 @@ my %retentions;
 
 my $line_count = 0;
 
+my $max = int(0);
+my $min = -1;
+
 for (my $i=0; $i <= $#ARGV; $i++) {
 
   print STDERR "@@@@@@@@@ cur_hour: $cur_hour $cur_time $ftime_offset\n";
@@ -55,6 +58,12 @@ for (my $i=0; $i <= $#ARGV; $i++) {
     my $type = $fields[-2];
     my $size = $fields[-3];
     my $block = $fields[-4] * 512;
+    if ($block > $max) { $max = $block; }
+    if ($min == -1) {
+      $min = $block;
+    } elsif ($block < $min) {
+      $min = $block;
+    }
     $cur_time = 1.0 * $fields[-1];
     $cur_hour = int(($cur_time + $ftime_offset) / 3600);
     #if ($line_count++ % 100000 == 0) {
@@ -132,7 +141,33 @@ for (my $i=0; $i <= $#ARGV; $i++) {
 local $" = "\n";
 print "write intervals: \n";
 print Dumper(\%write_intervals);
-        print "retention times: \n";
-        print Dumper(\%retentions);
+print "retention times: \n";
+print Dumper(\%retentions);
+print "write time: \n";
+print "min max\n";
+print "$min $max\n{\n";
+my @write_times = (0)x8;
+for (my $i=0; $i<int($max/$PAGE_SIZE) + 1; $i++) {
+  my $retention_day = 7;
+  if (exists($last_write{$i})) {
+    my $retention_day = int(($cur_hour - $last_write{$i})/24);
+  }
+  if ($retention_day < 7 and $retention_day >= 0) {
+    $write_times[$retention_day] ++;
+  } else {
+    if ($retention_day < 0 or $retention_day > 7) {
+      print STDERR "retention_day: $cur_hour - $last_write{$i} = $retention_day\n";
+    }
+    $write_times[7] ++;
+  }
+}
+for (my $i=0; $i<8; $i++) {
+  if ($i != 7) {
+    print "$i,$write_times[$i]\n";
+  } else {
+    print "7+,$write_times[$i]\n";
+  }
+}
+print "};\n";
 
-      exit 0;
+exit 0;
