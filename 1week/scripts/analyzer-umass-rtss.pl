@@ -150,7 +150,7 @@ my @write_times = (0)x8;
 for (my $i=0; $i<int($max/$PAGE_SIZE) + 1; $i++) {
   my $retention_day = 7;
   if (exists($last_write{$i})) {
-    my $retention_day = int(($cur_hour - $last_write{$i})/24);
+    $retention_day = int(($cur_hour - $last_write{$i})/24);
   }
   if ($retention_day < 7 and $retention_day >= 0) {
     $write_times[$retention_day] ++;
