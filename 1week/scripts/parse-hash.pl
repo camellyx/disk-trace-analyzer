@@ -14,11 +14,13 @@ if ($ARGV[1] eq "wri") {
     if ($start == 0) {
       if ($line =~ /write\ intervals/) {
         $start = 1;
+        next;
       }
     }
     if ($start == 1) {
       if ($line =~ /{/) {
         $start = 2;
+        next;
       }
     }
     if ($start != 2) {
@@ -46,11 +48,13 @@ if ($ARGV[1] eq "wri") {
     if ($start == 0) {
       if ($line =~ /retention\ times/) {
         $start = 1;
+        next;
       }
     }
     if ($start == 1) {
       if ($line =~ /{/) {
         $start = 2;
+        next;
       }
     }
     if ($start != 2) {
@@ -82,7 +86,31 @@ if ($ARGV[1] eq "wri") {
     }
   }
 } elsif ($ARGV[1] eq "res") {
-
+  # extract retention all
+  my $start = 0;
+  while (<FILE>) {
+    chomp;
+    my $line = $_;
+    if ($start == 0) {
+      if ($line =~ /write\ time/) {
+        $start = 1;
+        next;
+      }
+    }
+    if ($start == 1) {
+      if ($line =~ /{/) {
+        $start = 2;
+        next;
+      }
+    }
+    if ($start != 2) {
+      next;
+    }
+    if ($line =~ /};/) {
+      last;
+    }
+    print "$line\n";
+  }
 }
 
 
