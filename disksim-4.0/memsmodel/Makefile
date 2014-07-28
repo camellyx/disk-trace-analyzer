@@ -29,7 +29,7 @@
 
 include .paths
 
-LDFLAGS = -lm -L.
+LDFLAGS = -L. -lm
 
 DEBUG_OFLAGS = -g -DASSERTS # -DDEBUG=1
 PROF_OFLAGS = -g -DASSERTS -p
