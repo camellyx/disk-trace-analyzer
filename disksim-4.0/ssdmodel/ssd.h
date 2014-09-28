@@ -106,7 +106,7 @@ typedef struct _block_metadata {
 typedef struct _plane_metadata {
 
     int free_blocks;                // num of free blocks in this plane
-    int free_healthy_blocks;      // num of free unhealthy blocks in this plane
+    int free_healthy_blocks;        // num of free unhealthy blocks in this plane
 
     int valid_pages;                // num of valid pages (note that a block might not
                                     // be free but not all its pages should be valid)
@@ -318,6 +318,8 @@ typedef struct _ssd_timing_params {
                                         // (e.g., DISKSIM_SSD_WRITE_POLICY_SIMPLE)
 
     int     reserve_blocks;             // percentage of blocks to reserve
+
+    int     unhealthy_blocks;           // percentage of unhealthy blocks
 
     int     min_freeblks_percent;       // min free blocks percentage
 

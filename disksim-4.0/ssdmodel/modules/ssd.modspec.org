@@ -106,6 +106,10 @@ PARAM Reserve pages percentage		I	1
 TEST (i >= 0)
 INIT result->params.reserve_blocks = i;
 
+PARAM Unhealthy pages percentage		I	1
+TEST (i >= 0)
+INIT result->params.unhealthy_blocks = i;
+
 PARAM Minimum free blocks percentage	I	1
 TEST (i >= 0)
 INIT result->params.min_freeblks_percent = i;
