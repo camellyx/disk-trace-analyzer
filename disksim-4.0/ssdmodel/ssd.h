@@ -54,6 +54,10 @@ typedef enum {
   SSD_BLOCK_SEALED
 } SSD_BLOCK_STATES;
 
+typedef enum {
+  HEALTHY,
+  UNHEALTHY
+} SSD_BLOCK_HEALTH;
 
 /*
  * this is the metadata stored on each block.
@@ -64,6 +68,8 @@ typedef enum {
  * cleaning program.
  */
 typedef struct _block_metadata {
+    int         health;                 // health of this block.
+
     int         block_num;              //
     int         plane_num;              // the plane to which this block belongs to
 
@@ -100,12 +106,15 @@ typedef struct _block_metadata {
 typedef struct _plane_metadata {
 
     int free_blocks;                // num of free blocks in this plane
+    int free_healthy_blocks;      // num of free unhealthy blocks in this plane
 
     int valid_pages;                // num of valid pages (note that a block might not
                                     // be free but not all its pages should be valid)
+    int valid_healthy_blocks;
 
     unsigned int active_page;       // this points to the next page to write inside an
                                     // active block.
+    unsigned int active_healthy_page;
 
     int clean_in_progress;          // a flag that is set to 1 when some cleaning is
                                     // going on in this plane
@@ -127,7 +136,8 @@ typedef struct _ssd_element_metadata {
     int *lba_table;                 // a table mapping the lba to the physical pages
                                     // on the chip.
 
-    char *free_blocks;              // each bit indicates whether a block in the
+    char *free_unhealthy_blocks;
+    char *free_healthy_blocks;      // each bit indicates whether a block in the
                                     // ssd_element is free or in use. number of bits
                                     // in free_blocks is given by
                                     // (struct ssd*)->params.blocks_per_element
@@ -135,13 +145,16 @@ typedef struct _ssd_element_metadata {
     unsigned int tot_free_blocks;   // total number of free blocks in the system. i'm
                                     // having this variable just for convenience. it can be
                                     // computed from the above free_blocks list.
+    unsigned int tot_free_healthy_blocks;
 
     unsigned int active_page;       // this points to the next page to write inside an
                                     // active block.
+    unsigned int active_healthy_page;
 
     plane_metadata plane_meta[SSD_MAX_PLANES_PER_ELEM];
 
-    block_metadata *block_usage;    // contains the number of valid pages in each block.
+    block_metadata *unhealthy_block_usage;
+    block_metadata *healthy_block_usage;    // contains the number of valid pages in each block.
                                     // we also store the valid page numbers here. this is useful
                                     // during cleaning.
 
@@ -150,6 +163,7 @@ typedef struct _ssd_element_metadata {
     int plane_to_clean;             // which plane to clean?
     int plane_to_write;             // which plane to write next?
     int block_alloc_pos;            // start allocating block from this position
+    //TODO: not sure about this
 
     parunit parunits[SSD_MAX_PARUNITS_PER_ELEM];
 
@@ -203,7 +217,8 @@ typedef struct _gang_metadata {
     int busy;                                   // set to 1 if at least one element is busy in this gang
     int reqs_waiting;                           // num of reqs waiting in this gang
     double oldest;                              // time at which the oldest of the waiting reqs arrived
-    int elem_free_pages[SSD_MAX_ELEMENTS];      // free pages on each element
+    int elem_free_unhealthy_pages[SSD_MAX_ELEMENTS];      // free pages on each element
+    int elem_free_healthy_pages[SSD_MAX_ELEMENTS];
     ssd_elem_number *pg2elem;
 } gang_metadata;
 
@@ -373,8 +388,14 @@ typedef struct ssd_info {
   int ssds_len; /* allocated size of ssds */
 } ssdinfo_t;
 
+typedef enum {
+  SSD_HOT,
+  SSD_COLD
+} SSD_HOTNESS;
+
 /* request structure */
 typedef struct _ssd_req {
+    int hotness;
     int blk;
     int count;
     int is_read;
