@@ -71,6 +71,7 @@ static struct lp_varspec ssdmodel_ssd_params [] = {
    {"Block erase latency", D, 1 },
    {"Write policy", I, 1 },
    {"Reserve pages percentage", I, 1 },
+   {"Unhealthy pages percentage", I, 1},
    {"Minimum free blocks percentage", I, 1 },
    {"Cleaning policy", I, 1 },
    {"Planes per package", I, 1 },
