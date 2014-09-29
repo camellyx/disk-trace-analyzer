@@ -82,6 +82,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     //////////////////////////////////////////////////////////////////////////////
     // active page starts at the 1st page on the reserved section
     reserved_blocks_per_plane = (currdisk->params.reserve_blocks * currdisk->params.blocks_per_plane) / 100;
+    //TODO: FIXME compute with unhealthy_blocks;
     usable_blocks_per_plane = currdisk->params.blocks_per_plane - reserved_blocks_per_plane;
     reserved_blocks = reserved_blocks_per_plane * currdisk->params.planes_per_pkg;
     usable_blocks = usable_blocks_per_plane * currdisk->params.planes_per_pkg;

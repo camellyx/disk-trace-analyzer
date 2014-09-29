@@ -139,6 +139,10 @@ void ssd_update_free_block_status(int blk, int plane_num, ssd_element_metadata *
     metadata->block_usage[blk].bsn = 0;
     metadata->tot_free_blocks ++;
     metadata->plane_meta[plane_num].free_blocks ++;
+    if (metadata->block_usage[blk].health == HEALTHY) {
+      metadata->tot_free_healthy_blocks ++;
+      metadata->plane_meta[plane_num].free_healthy_blocks ++;
+    }
     ssd_assert_free_blocks(s, metadata);
 
     // there must be no valid pages in the erased block
@@ -425,6 +429,10 @@ int ssd_migrate_cold_data(int to_blk, double *mcost, int plane_num, int elem_num
     ssd_set_bit(metadata->free_blocks, bitpos);
     metadata->tot_free_blocks --;
     metadata->plane_meta[metadata->block_usage[to_blk].plane_num].free_blocks --;
+    if (metadata->block_usage[to_blk].health == HEALTHY) {
+      metadata->tot_free_healthy_blocks --;
+      metadata->plane_meta[metadata->block_usage[to_blk].plane_num].free_healthy_blocks --;
+    }
 
 #if SSD_ASSERT_ALL
     if (plane_num != -1) {

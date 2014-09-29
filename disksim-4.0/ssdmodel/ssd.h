@@ -136,8 +136,7 @@ typedef struct _ssd_element_metadata {
     int *lba_table;                 // a table mapping the lba to the physical pages
                                     // on the chip.
 
-    char *free_unhealthy_blocks;
-    char *free_healthy_blocks;      // each bit indicates whether a block in the
+    char *free_blocks;              // each bit indicates whether a block in the
                                     // ssd_element is free or in use. number of bits
                                     // in free_blocks is given by
                                     // (struct ssd*)->params.blocks_per_element
@@ -153,8 +152,7 @@ typedef struct _ssd_element_metadata {
 
     plane_metadata plane_meta[SSD_MAX_PLANES_PER_ELEM];
 
-    block_metadata *unhealthy_block_usage;
-    block_metadata *healthy_block_usage;    // contains the number of valid pages in each block.
+    block_metadata *block_usage;    // contains the number of valid pages in each block.
                                     // we also store the valid page numbers here. this is useful
                                     // during cleaning.
 

@@ -154,13 +154,16 @@ void ssd_assert_plane_freebits(int plane_num, int elem_num, ssd_element_metadata
 void ssd_assert_free_blocks(ssd_t *s, ssd_element_metadata *metadata)
 {
     int tmp = 0;
+    int tmp1 = 0;
     int i;
 
     //assertion
     for (i = 0; i < s->params.planes_per_pkg; i ++) {
         tmp += metadata->plane_meta[i].free_blocks;
+        tmp1 += metadata->plane_meta[i].free_healthy_blocks;
     }
     ASSERT(metadata->tot_free_blocks == tmp);
+    ASSERT(metadata->tot_free_healthy_blocks == tmp1);
 }
 
 /*

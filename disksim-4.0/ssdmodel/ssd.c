@@ -1306,6 +1306,8 @@ void ssd_printcleanstats(int *set, int setsize, char *sourcestr)
 
                 fprintf(outputfile, "%s #%d elem #%d   Number of free blocks:\t%d\n",
                     sourcestr, set[i], j, s->elements[j].metadata.tot_free_blocks);
+                fprintf(outputfile, "%s #%d elem #%d   Number of free healthy blocks:\t%d\n",
+                    sourcestr, set[i], j, s->elements[j].metadata.tot_free_healthy_blocks);
                 fprintf(outputfile, "%s #%d elem #%d   Number of cleans:\t%d\n",
                     sourcestr, set[i], j, stat->num_clean);
                 fprintf(outputfile, "%s #%d elem #%d   Pages moved:\t%d\n",
