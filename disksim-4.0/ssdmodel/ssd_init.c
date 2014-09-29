@@ -82,14 +82,21 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     //////////////////////////////////////////////////////////////////////////////
     // active page starts at the 1st page on the reserved section
     reserved_blocks_per_plane = (currdisk->params.reserve_blocks * currdisk->params.blocks_per_plane) / 100;
-    //TODO: FIXME compute with unhealthy_blocks;
     usable_blocks_per_plane = currdisk->params.blocks_per_plane - reserved_blocks_per_plane;
     reserved_blocks = reserved_blocks_per_plane * currdisk->params.planes_per_pkg;
     usable_blocks = usable_blocks_per_plane * currdisk->params.planes_per_pkg;
 
     //////////////////////////////////////////////////////////////////////////////
+    // unhealthy page
+    unhealthy_blocks_per_plane = (currdisk->params.unhealthy_blocks * currdisk->params.blocks_per_plane) / 100;
+    healthy_blocks_per_plane = currdisk->params.blocks_per_plane - unhealthy_blocks_per_plane;
+    unhealthy_blocks = unhealthy_blocks_per_plane * currdisk->params.planes_per_pkg;
+    healthy_blocks = healthy_blocks_per_plane * currdisk->params.planes_per_pkg;
+
+    //////////////////////////////////////////////////////////////////////////////
     // initialize the free blocks and free pages
     metadata->tot_free_blocks = reserved_blocks;
+    metadata->tot_free_healthy_blocks = healthy_blocks;   // TODO: why reserved blocks above?
 
     //////////////////////////////////////////////////////////////////////////////
     // assign the gang and init the element's free pages
