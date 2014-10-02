@@ -96,13 +96,16 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     //////////////////////////////////////////////////////////////////////////////
     // initialize the free blocks and free pages
     metadata->tot_free_blocks = reserved_blocks;
-    metadata->tot_free_healthy_blocks = healthy_blocks;   // TODO: why reserved blocks above?
+    metadata->tot_free_healthy_blocks = reserved_blocks - unhealthy_blocks;   // TODO: why reserved blocks above?
+    ASSERT(reserved_blocks - healthy_blocks > 0);
 
     //////////////////////////////////////////////////////////////////////////////
     // assign the gang and init the element's free pages
     metadata->gang_num = elem_number / currdisk->params.elements_per_gang;
     currdisk->gang_meta[metadata->gang_num].elem_free_pages[elem_number] = \
         metadata->tot_free_blocks * SSD_DATA_PAGES_PER_BLOCK(currdisk);
+    currdisk->gang_meta[metadata->gang_num].elem_free_healthy_pages[elem_number] = \
+        metadata->tot_free_healthy_blocks * SSD_DATA_PAGES_PER_BLOCK(currdisk);
     g = &currdisk->gang_meta[metadata->gang_num];
     elem_index = elem_number % currdisk->params.elements_per_gang;
 
@@ -131,6 +134,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
                 break;
 
             case PLANE_BLOCKS_FULL_STRIPE:
+                healthy_blocks_to_skip = (currdisk->params.planes_per_pkg * healthy_blocks_per_plane) + i;
                 blocks_to_skip = (currdisk->params.planes_per_pkg * usable_blocks_per_plane) + i;
                 break;
 
@@ -140,7 +144,9 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
         }
 
         metadata->plane_meta[i].active_page = blocks_to_skip*currdisk->params.pages_per_block;
+        metadata->plane_meta[i].active_healthy_page = healthy_blocks_to_skip*currdisk->params.pages_per_block;
         metadata->plane_meta[i].free_blocks = reserved_blocks_per_plane;
+        metadata->plane_meta[i].free_healthy_blocks = healthy_blocks_per_plane;
         metadata->plane_meta[i].valid_pages = 0;
         metadata->plane_meta[i].clean_in_progress = 0;
         metadata->plane_meta[i].clean_in_block = -1;
@@ -157,7 +163,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
 
     //////////////////////////////////////////////////////////////////////////////
     // init the element's active page
-    switch(plane_block_mapping) {
+    switch(plane_block_mapping) {       // TODO: assign active page and active healthy page for element and plane
         case PLANE_BLOCKS_CONCAT:
             metadata->active_page = usable_blocks_per_plane * currdisk->params.pages_per_block;
             break;
@@ -167,7 +173,8 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
             break;
 
         case PLANE_BLOCKS_FULL_STRIPE:
-            metadata->active_page = (currdisk->params.planes_per_pkg * usable_blocks_per_plane) * currdisk->params.pages_per_block;
+            metadata->active_healthy_page = (currdisk->params.planes_per_pkg * usable_blocks_per_plane) * currdisk->params.pages_per_block;
+            metadata->active_page = (currdisk->params.planes_per_pkg * healthy_blocks_per_plane) * currdisk->params.pages_per_block;
             break;
 
         default:
@@ -221,6 +228,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     for (i = 0; i < tot_blocks; i ++) {
         int j;
 
+        metadata->block_usage[i].health = (i >= healthy_blocks);  // first several blocks as healthy blocks
         metadata->block_usage[i].block_num = i;
         metadata->block_usage[i].page = (int*)malloc(sizeof(int) * currdisk->params.pages_per_block);
 

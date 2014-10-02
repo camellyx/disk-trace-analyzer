@@ -300,7 +300,7 @@ int ssd_bitpos_to_plane(int bitpos, ssd_t *s)
  * this code assumes that there is a valid active page where the write can go
  * without invoking new cleaning.
  */
-double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
+double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)   // this is the hot write version
 {
     double cost;
     unsigned int active_page = metadata->active_page;

@@ -110,7 +110,6 @@ typedef struct _plane_metadata {
 
     int valid_pages;                // num of valid pages (note that a block might not
                                     // be free but not all its pages should be valid)
-    int valid_healthy_blocks;
 
     unsigned int active_page;       // this points to the next page to write inside an
                                     // active block.
@@ -215,7 +214,7 @@ typedef struct _gang_metadata {
     int busy;                                   // set to 1 if at least one element is busy in this gang
     int reqs_waiting;                           // num of reqs waiting in this gang
     double oldest;                              // time at which the oldest of the waiting reqs arrived
-    int elem_free_unhealthy_pages[SSD_MAX_ELEMENTS];      // free pages on each element
+    int elem_free_pages[SSD_MAX_ELEMENTS];      // free pages on each element
     int elem_free_healthy_pages[SSD_MAX_ELEMENTS];
     ssd_elem_number *pg2elem;
 } gang_metadata;

@@ -1,5 +1,5 @@
 // DiskSim SSD support
-// ©2008 Microsoft Corporation. All Rights Reserved
+// Â©2008 Microsoft Corporation. All Rights Reserved
 
 #include "ssd.h"
 #include "ssd_clean.h"
