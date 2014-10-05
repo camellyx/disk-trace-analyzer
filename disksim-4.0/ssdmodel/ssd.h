@@ -119,6 +119,7 @@ typedef struct _plane_metadata {
                                     // going on in this plane
     int clean_in_block;             // which block is being cleaned?
     int block_alloc_pos;            // block allocation position in a plane
+    int healthy_block_alloc_pos;            // block allocation position in a plane
     int parunit_num;                // parallel unit number
     int num_cleans;                 // number of times cleaning was invoked on this
 } plane_metadata;
@@ -160,7 +161,9 @@ typedef struct _ssd_element_metadata {
     int plane_to_clean;             // which plane to clean?
     int plane_to_write;             // which plane to write next?
     int block_alloc_pos;            // start allocating block from this position
-    //TODO: not sure about this
+    int healthy_plane_to_clean;             // which plane to clean?
+    int healthy_plane_to_write;             // which plane to write next?
+    int healthy_block_alloc_pos;            // start allocating block from this position
 
     parunit parunits[SSD_MAX_PARUNITS_PER_ELEM];
 
@@ -394,7 +397,7 @@ typedef enum {
 
 /* request structure */
 typedef struct _ssd_req {
-    int hotness;
+    //int hotness;
     int blk;
     int count;
     int is_read;
@@ -461,6 +464,7 @@ void    ssd_assert_free_blocks(ssd_t *s, ssd_element_metadata *metadata);
 void    ssd_assert_valid_pages(int plane_num, ssd_element_metadata *metadata, ssd_t *s);
 double  ssd_data_transfer_cost(ssd_t *s, int sectors_count);
 int     ssd_last_page_in_block(int page_num, ssd_t *s);
+double  _ssd_write_healthy_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn);
 double  _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn);
 int     ssd_logical_pageno(int blkno, ssd_t *s);
 int     ssd_block_to_bitpos(ssd_t *currdisk, int block);
@@ -472,6 +476,8 @@ double  ssd_read_policy_simple(int count, ssd_t *s);
 void    ssd_complete_parent(ioreq_event *curr, ssd_t *currdisk);
 double _ssd_invoke_element_cleaning(int elem_num, ssd_t *s);
 int     ssd_already_present(ssd_req **reqs, int total, ioreq_event *req);
+
+int     ssd_page_is_hot(ssd_element_metadata *metadata, int lpn);
 
 #endif   /* DISKSIM_ssd_H */
 

@@ -1484,6 +1484,21 @@ double ssd_get_seektime (int devno,
   return 0;
 }
 
+// Simple hot page identification policy
+int ssd_page_is_hot(ssd_t *s, ssd_element_metadata *metadata, int lpn) {
+  unsigned int ppn = metadata->lba_table[lpn];
+  if (ppn == -1) {
+    return 0;
+  }
+  switch (metadata->block_usage[ppn].health) {
+    case HEALTHY:
+      return (SSD_PAGE_TO_BLOCK(ppn, s) == SSD_PAGE_TO_BLOCK(metadata->active_healthy_page, s));
+    default:
+      return 1;
+  }
+}
+
+
 /* default ssd dev header */
 struct device_header ssd_hdr_initializer = {
   DEVICETYPE_SSD,
