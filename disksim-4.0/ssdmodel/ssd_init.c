@@ -73,6 +73,8 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     unsigned int tot_pages = tot_blocks * currdisk->params.pages_per_block;
     unsigned int reserved_blocks, usable_blocks, export_size;
     unsigned int reserved_blocks_per_plane, usable_blocks_per_plane;
+    unsigned int unhealthy_blocks, healthy_blocks;
+    unsigned int unhealthy_blocks_per_plane, healthy_blocks_per_plane;
     unsigned int bitpos;
     unsigned int active_block;
     unsigned int elem_index;
@@ -96,7 +98,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     //////////////////////////////////////////////////////////////////////////////
     // initialize the free blocks and free pages
     metadata->tot_free_blocks = reserved_blocks;
-    metadata->tot_free_healthy_blocks = reserved_blocks - unhealthy_blocks;   // TODO: why reserved blocks above?
+    metadata->tot_free_healthy_blocks = reserved_blocks - unhealthy_blocks;
     ASSERT(reserved_blocks - healthy_blocks > 0);
 
     //////////////////////////////////////////////////////////////////////////////
@@ -113,7 +115,10 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     // let's begin cleaning with the first plane
     metadata->plane_to_clean = 0;
     metadata->plane_to_write = 0;
-    metadata->block_alloc_pos = 0;
+    metadata->block_alloc_pos = healthy_blocks_per_plane; // TODO
+    metadata->healthy_plane_to_clean = 0;
+    metadata->healthy_plane_to_write = 0;
+    metadata->healthy_block_alloc_pos = 0;
     metadata->reqs_waiting = 0;
     metadata->tot_migrations = 0;
     metadata->tot_pgs_migrated = 0;
@@ -150,7 +155,8 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
         metadata->plane_meta[i].valid_pages = 0;
         metadata->plane_meta[i].clean_in_progress = 0;
         metadata->plane_meta[i].clean_in_block = -1;
-        metadata->plane_meta[i].block_alloc_pos = i*currdisk->params.blocks_per_plane;
+        metadata->plane_meta[i].block_alloc_pos = healthy_blocks_per_plane + i*currdisk->params.blocks_per_plane;
+        metadata->plane_meta[i].healthy_block_alloc_pos = i*currdisk->params.blocks_per_plane;
         metadata->plane_meta[i].parunit_num = i / SSD_PLANES_PER_PARUNIT(currdisk);
         metadata->plane_meta[i].num_cleans = 0;
     }
