@@ -300,13 +300,25 @@ int ssd_bitpos_to_plane(int bitpos, ssd_t *s)
  * this code assumes that there is a valid active page where the write can go
  * without invoking new cleaning.
  */
-double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)   // this is the hot write version
+double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
 {
     double cost;
-    unsigned int active_page = metadata->active_page;
-    unsigned int active_block = SSD_PAGE_TO_BLOCK(active_page, s);
-    unsigned int pagepos_in_block = active_page % s->params.pages_per_block;
-    unsigned int active_plane = metadata->block_usage[active_block].plane_num;
+    unsigned int active_page;
+    unsigned int active_block;
+    unsigned int pagepos_in_block;
+    unsigned int active_plane;
+
+    if (ssd_page_is_hot(s, metadata, lpn)) {
+        active_page = metadata->active_healthy_page;
+        active_block = SSD_PAGE_TO_BLOCK(active_page, s);
+        pagepos_in_block = active_healthy_page % s->params.pages_per_block;
+        active_plane = metadata->block_usage[active_block].plane_num;
+    } else {
+        active_page = metadata->active_healthy_page;
+        active_block = SSD_PAGE_TO_BLOCK(active_page, s);
+        pagepos_in_block = active_healthy_page % s->params.pages_per_block;
+        active_plane = metadata->block_usage[active_block].plane_num;
+    }
 
     // see if this logical page no is already mapped.
     if (metadata->lba_table[lpn] != -1) {
@@ -388,7 +400,97 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)   
  * circular dep). we can ensure this by invoking the cleaning algorithm
  * when the num of free blocks is high enough to help in cleaning.
  */
-void _ssd_alloc_active_block(int plane_num, int elem_num, ssd_t *s)
+void _ssd_alloc_active_block(int plane_num, int elem_num, ssd_t *s) // unhealthy
+{
+    ssd_element_metadata *metadata = &(s->elements[elem_num].metadata);
+    unsigned char *free_blocks = metadata->free_blocks;
+    int active_block = -1;
+    int prev_pos;
+    int bitpos;
+    unsigned int healthy_blocks_per_plane = s->params.blocks_per_plane - (s->params.unhealthy_blocks * s->params.blocks_per_plane) / 100;
+
+    if (plane_num != -1) {
+        prev_pos = metadata->plane_meta[plane_num].block_alloc_pos;
+    } else {
+        prev_pos = metadata->block_alloc_pos;
+    }
+
+    // find a free bit
+    bitpos = ssd_find_zero_bit(free_blocks, s->params.blocks_per_element, prev_pos);
+    ASSERT((bitpos >= 0) && (bitpos < s->params.blocks_per_element));
+
+    // check if we found the free bit in the plane we wanted to
+    if (plane_num != -1) {
+        if ((ssd_bitpos_to_plane(bitpos, s) != plane_num) && 
+            (metadata->block_usage[active_block].health != HEALTHY)) {
+
+            //printf("Error: We wanted a free block in plane %d but found another in %d\n",
+            //  plane_num, ssd_bitpos_to_plane(bitpos, s));
+            //printf("So, starting the search again for plane %d\n", plane_num);
+
+            // start from the beginning
+            metadata->plane_meta[plane_num].block_alloc_pos = healthy_blocks_per_plane + plane_num * s->params.blocks_per_plane;
+            prev_pos = metadata->plane_meta[plane_num].block_alloc_pos;
+            bitpos = ssd_find_zero_bit(free_blocks, s->params.blocks_per_element, prev_pos);
+            ASSERT((bitpos >= 0) && (bitpos < s->params.blocks_per_element));
+
+            if (ssd_bitpos_to_plane(bitpos, s) != plane_num) {
+                printf("Error: this plane %d is full\n", plane_num);
+                printf("this case is not yet handled\n");
+                exit(1);
+            }
+        }
+
+        metadata->plane_meta[plane_num].block_alloc_pos = \
+            (plane_num * s->params.blocks_per_plane) + ((bitpos+1) % s->params.blocks_per_plane);
+    } else {
+        metadata->block_alloc_pos = (bitpos+1) % s->params.blocks_per_element;
+    }
+
+    // find the block num
+    active_block = ssd_bitpos_to_block(bitpos, s);
+
+    if (active_block != -1) {
+        plane_metadata *pm;
+
+        // make sure we're doing the right thing
+        ASSERT(metadata->block_usage[active_block].plane_num == ssd_bitpos_to_plane(bitpos, s));
+        ASSERT(metadata->block_usage[active_block].bsn == 0);
+        ASSERT(metadata->block_usage[active_block].num_valid == 0);
+        ASSERT(metadata->block_usage[active_block].state == SSD_BLOCK_CLEAN);
+
+        if (plane_num == -1) {
+            plane_num = metadata->block_usage[active_block].plane_num;
+        } else {
+            ASSERT(plane_num == metadata->block_usage[active_block].plane_num);
+        }
+
+        pm = &metadata->plane_meta[plane_num];
+
+        // reduce the total number of free blocks
+        metadata->tot_free_blocks --;
+        pm->free_blocks --;
+
+        //assertion
+        ssd_assert_free_blocks(s, metadata);
+
+        // allocate the block
+        ssd_set_bit(free_blocks, bitpos);
+        metadata->block_usage[active_block].state = SSD_BLOCK_INUSE;
+        metadata->block_usage[active_block].bsn = metadata->bsn ++;
+
+        // start from the first page of the active block
+        pm->active_page = active_block * s->params.pages_per_block;
+        metadata->active_page = pm->active_page;
+
+        //ssd_assert_plane_freebits(plane_num, elem_num, metadata, s);
+    } else {
+        fprintf(stderr, "Error: cannot find a free block in ssd element %d\n", elem_num);
+        exit(-1);
+    }
+}
+
+void _ssd_alloc_active_healthy_block(int plane_num, int elem_num, ssd_t *s) // healthy
 {
     ssd_element_metadata *metadata = &(s->elements[elem_num].metadata);
     unsigned char *free_blocks = metadata->free_blocks;
@@ -405,10 +507,12 @@ void _ssd_alloc_active_block(int plane_num, int elem_num, ssd_t *s)
     // find a free bit
     bitpos = ssd_find_zero_bit(free_blocks, s->params.blocks_per_element, prev_pos);
     ASSERT((bitpos >= 0) && (bitpos < s->params.blocks_per_element));
+    active_block = ssd_bitpos_to_block(bitpos, s);
 
     // check if we found the free bit in the plane we wanted to
     if (plane_num != -1) {
-        if (ssd_bitpos_to_plane(bitpos, s) != plane_num) {
+        if (ssd_bitpos_to_plane(bitpos, s) != plane_num ||
+            metadata->block_usage[active_block].health != HEALTHY) {
 
             //printf("Error: We wanted a free block in plane %d but found another in %d\n",
             //  plane_num, ssd_bitpos_to_plane(bitpos, s));
@@ -690,6 +794,9 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                     if (ssd_last_page_in_block(metadata->plane_meta[plane_num].active_page, s)) {
                         _ssd_alloc_active_block(plane_num, elem_num, s);
                     }
+                    if (ssd_last_page_in_block(metadata->plane_meta[plane_num].active_healthy_page, s)) {
+                        _ssd_alloc_active_healthy_block(plane_num, elem_num, s);
+                    }
 
                     // issue the write to the current active page.
                     // we need to transfer the data across the serial pins for write.
@@ -771,14 +878,15 @@ static double ssd_write_one_active_page(int blkno, int count, int elem_num, ssd_
             printf ("We should not clean here ...\n");
             ASSERT(0);
 
+            // YIXIN: looks like the following is dead code
             // if we're cleaning in the background, this should
             // not get executed
-            if (s->params.cleaning_in_background) {
-                exit(1);
-            }
+            //if (s->params.cleaning_in_background) {
+            //    exit(1);
+            //}
 
-            cleaning_invoked = 1;
-            cost += ssd_clean_element_no_copyback(elem_num, s);
+            //cleaning_invoked = 1;
+            //cost += ssd_clean_element_no_copyback(elem_num, s);
         }
 
         // if we had invoked the cleaning, we must again check if we
@@ -791,10 +899,39 @@ static double ssd_write_one_active_page(int blkno, int count, int elem_num, ssd_
             _ssd_alloc_active_block(-1, elem_num, s);
         }
     }
+    if (ssd_last_page_in_block(metadata->active_healthy_page, s)) {
+
+        // do we need to create more free blocks for future writes?
+        if (ssd_start_cleaning(-1, elem_num, s)) {
+
+            printf ("We should not clean here ...\n");
+            ASSERT(0);
+
+            // YIXIN: looks like the following is dead code
+            // if we're cleaning in the background, this should
+            // not get executed
+            //if (s->params.cleaning_in_background) {
+            //    exit(1);
+            //}
+
+            //cleaning_invoked = 1;
+            //cost += ssd_clean_element_no_copyback(elem_num, s);
+        }
+
+        // if we had invoked the cleaning, we must again check if we
+        // need an active block before allocating one. this check is
+        // needed because the above cleaning procedure might have
+        // allocated new active blocks during the process of cleaning,
+        // which might still have free pages for writing.
+        if (!cleaning_invoked ||
+            ssd_last_page_in_block(metadata->active_healthy_page, s)) {
+            _ssd_alloc_active_healthy_block(-1, elem_num, s);
+        }
+    }
 
 
     // issue the write to the current active page
-    cost += _ssd_write_page_osr(s, metadata, lpn);
+    cost += _ssd_write_page_osr(s, metadata, lpn); // this function need guarantees of enough space to write
     cost += ssd_data_transfer_cost(s, count);
 
     return cost;

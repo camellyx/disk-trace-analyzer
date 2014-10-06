@@ -912,7 +912,7 @@ static double ssd_clean_blocks_greedy(int plane_num, int elem_num, ssd_t *s)
     return cost;
 }
 
-double ssd_clean_element_no_copyback(int elem_num, ssd_t *s)
+double ssd_clean_element_no_copyback(int elem_num, ssd_t *s) // YIXIN: not used in current setting
 {
     double cost = 0;
 
@@ -1051,14 +1051,25 @@ int ssd_start_cleaning_parunit(int parunit_num, int elem_num, ssd_t *s)
  * invoke cleaning when the number of free blocks drop below a
  * certain threshold (in a plane or an element).
  */
-int ssd_start_cleaning(int plane_num, int elem_num, ssd_t *s)
+int ssd_start_cleaning_unhealthy(int plane_num, int elem_num, ssd_t *s)
 {
     if (plane_num == -1) {
-        unsigned int low = (unsigned int)LOW_WATERMARK_PER_ELEMENT(s);
-        return (s->elements[elem_num].metadata.tot_free_blocks <= low);
+        unsigned int low = (unsigned int)LOW_UNHEALTHY_WATERMARK_PER_ELEMENT(s);
+        return (s->elements[elem_num].metadata.tot_free_blocks - s->elements[elem_num].metadata.tot_free_healthy_blocks <= low);
     } else {
-        int low = (int)LOW_WATERMARK_PER_PLANE(s);
-        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_blocks <= low);
+        int low = (int)LOW_UNHEALTHY_WATERMARK_PER_PLANE(s);
+        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_blocks - s->elements[elem_num].metadata.plane_meta[plane_num].free_healthy_blocks <= low);
+    }
+}
+
+int ssd_start_cleaning_healthy(int plane_num, int elem_num, ssd_t *s)
+{
+    if (plane_num == -1) {
+        unsigned int low = (unsigned int)LOW_HEALTHY_WATERMARK_PER_ELEMENT(s);
+        return (s->elements[elem_num].metadata.tot_free_healthy_blocks <= low);
+    } else {
+        int low = (int)LOW_HEALTHY_WATERMARK_PER_PLANE(s);
+        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_healthy_blocks <= low);
     }
 }
 
@@ -1066,14 +1077,25 @@ int ssd_start_cleaning(int plane_num, int elem_num, ssd_t *s)
  * stop cleaning when sufficient number of free blocks
  * are generated (in a plane or an element).
  */
-int ssd_stop_cleaning(int plane_num, int elem_num, ssd_t *s)
+int ssd_stop_cleaning_unhealthy(int plane_num, int elem_num, ssd_t *s)
 {
     if (plane_num == -1) {
-        unsigned int high = (unsigned int)HIGH_WATERMARK_PER_ELEMENT(s);
-        return (s->elements[elem_num].metadata.tot_free_blocks > high);
+        unsigned int high = (unsigned int)HIGH_UNHEALTHY_WATERMARK_PER_ELEMENT(s);
+        return (s->elements[elem_num].metadata.tot_free_blocks - s->elements[elem_num].metadata.tot_free_healthy_blocks > high);
     } else {
-        int high = (int)HIGH_WATERMARK_PER_PLANE(s);
-        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_blocks > high);
+        int high = (int)HIGH_UNHEALTHY_WATERMARK_PER_PLANE(s);
+        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_blocks - s->elements[elem_num].metadata.plane_meta[plane_num].free_healthy_blocks > high);
+    }
+}
+
+int ssd_stop_cleaning_healthy(int plane_num, int elem_num, ssd_t *s)
+{
+    if (plane_num == -1) {
+        unsigned int high = (unsigned int)HIGH_HEALTHY_WATERMARK_PER_ELEMENT(s);
+        return (s->elements[elem_num].metadata.tot_free_healthy_blocks > high);
+    } else {
+        int high = (int)HIGH_HEALTHY_WATERMARK_PER_PLANE(s);
+        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_healthy_blocks > high);
     }
 }
 
