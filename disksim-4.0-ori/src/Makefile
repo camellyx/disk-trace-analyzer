@@ -77,7 +77,7 @@ distclean: realclean
 	rm -rf ../lib ../include
 	$(MAKE) -C modules distclean
 
-.PHONY: modules
+.PHONY: modules disksim
 
 modules: 
 	$(MAKE) -C modules
