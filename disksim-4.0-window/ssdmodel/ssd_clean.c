@@ -196,18 +196,28 @@ int ssd_rate_limit(int block_life, double avg_lifetime)
 /*
  * computes the average lifetime of all the blocks in a plane.
  */
-double ssd_compute_avg_lifetime_in_plane(int plane_num, int elem_num, ssd_t *s)
+double ssd_compute_avg_lifetime_in_plane(int plane_num, int elem_num, ssd_t *s, int health)
 {
     int i;
     int bitpos;
     double tot_lifetime = 0;
     ssd_element_metadata *metadata = &(s->elements[elem_num].metadata);
+    unsigned int unhealthy_blocks_per_plane = (s->params.unhealthy_blocks * s->params.blocks_per_plane) / 100;
+    unsigned int tot_blocks = 0;
+
+    if (health == HEALTHY) {
+      tot_blocks = s->params.blocks_per_plane - unhealthy_blocks_per_plane;
+    } else {
+      tot_blocks = unhealthy_blocks_per_plane;
+    }
 
     bitpos = plane_num * s->params.blocks_per_plane;
     for (i = bitpos; i < bitpos + (int)s->params.blocks_per_plane; i ++) {
         int block = ssd_bitpos_to_block(i, s);
         ASSERT(metadata->block_usage[block].plane_num == plane_num);
-        tot_lifetime += metadata->block_usage[block].rem_lifetime;
+        if (metadata->block_usage[block].health == health) {
+            tot_lifetime += metadata->block_usage[block].rem_lifetime;
+        }
     }
 
     return (tot_lifetime / s->params.blocks_per_plane);
@@ -217,25 +227,35 @@ double ssd_compute_avg_lifetime_in_plane(int plane_num, int elem_num, ssd_t *s)
 /*
  * computes the average lifetime of all the blocks in the ssd element.
  */
-double ssd_compute_avg_lifetime_in_element(int elem_num, ssd_t *s)
+double ssd_compute_avg_lifetime_in_element(int elem_num, ssd_t *s, int health)
 {
     double tot_lifetime = 0;
     int i;
     ssd_element_metadata *metadata = &(s->elements[elem_num].metadata);
+    unsigned int unhealthy_blocks_per_plane = (s->params.unhealthy_blocks * s->params.blocks_per_plane) / 100;
+    unsigned int tot_blocks = 0;
 
-    for (i = 0; i < s->params.blocks_per_element; i ++) {
-        tot_lifetime += metadata->block_usage[i].rem_lifetime;
+    if (health == HEALTHY) {
+        tot_blocks = (s->params.blocks_per_plane - unhealthy_blocks_per_plane) * s->params.planes_per_pkg;
+    } else {
+        tot_blocks = unhealthy_blocks_per_plane * s->params.planes_per_pkg;
     }
 
-    return (tot_lifetime / s->params.blocks_per_element);
+    for (i = 0; i < s->params.blocks_per_element; i ++) {
+        if (metadata->block_usage[i].health == health) {
+            tot_lifetime += metadata->block_usage[i].rem_lifetime;
+        }
+    }
+
+    return (tot_lifetime / tot_blocks);
 }
 
-double ssd_compute_avg_lifetime(int plane_num, int elem_num, ssd_t *s)
+double ssd_compute_avg_lifetime(int plane_num, int elem_num, ssd_t *s, int health)
 {
     if (plane_num == -1) {
-        return ssd_compute_avg_lifetime_in_element(elem_num, s);
+        return ssd_compute_avg_lifetime_in_element(elem_num, s, health);
     } else {
-        return ssd_compute_avg_lifetime_in_plane(plane_num, elem_num, s);
+        return ssd_compute_avg_lifetime_in_plane(plane_num, elem_num, s, health);
     }
 }
 
@@ -305,8 +325,11 @@ int ssd_pick_wear_aware(int blk, int block_life, double avg_lifetime, ssd_t *s)
 }
 #endif
 
+/*
+ * check if the block is valid to pick or not
+ */
 static int _ssd_pick_block_to_clean
-(int blk, int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s)
+(int blk, int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s, int health)
 {
     int block_life;
 
@@ -314,6 +337,10 @@ static int _ssd_pick_block_to_clean
         if (metadata->block_usage[blk].plane_num != plane_num) {
             return 0;
         }
+    }
+
+    if (metadata->block_usage[blk].health == health) {
+      return 0;
     }
 
     block_life = metadata->block_usage[blk].rem_lifetime;
@@ -490,7 +517,7 @@ int ssd_pick_wear_aware_with_migration
  * a greedy solution, where we find the block in a plane with the least
  * num of valid pages and return it.
  */
-static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, ssd_element_metadata *metadata, ssd_t *s)
+static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, ssd_element_metadata *metadata, ssd_t *s, int health)
 {
     double avg_lifetime = 1;
     int i;
@@ -502,12 +529,12 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
     *mcost = 0;
 
     // find the average life time of all the blocks in this element
-    avg_lifetime = ssd_compute_avg_lifetime(plane_num, elem_num, s);
+    avg_lifetime = ssd_compute_avg_lifetime(plane_num, elem_num, s, health);
 
     // we create a list of greedily selected blocks
     ll_create(&greedy_list);
     for (i = 0; i < s->params.blocks_per_element; i ++) {
-        if (_ssd_pick_block_to_clean(i, plane_num, elem_num, metadata, s)) {
+        if (_ssd_pick_block_to_clean(i, plane_num, elem_num, metadata, s, health)) {
 
             // greedily select the block
             if (metadata->block_usage[i].num_valid <= min_valid) {
@@ -551,7 +578,7 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
             block = bm->block_num;
             break;
         } else {
-#if MIGRATE
+#if MIGRATE // = 1
             // migration
             mig_blk = ssd_pick_wear_aware_with_migration(bm->block_num, bm->rem_lifetime, avg_lifetime, mcost, bm->plane_num, elem_num, s);
             if (mig_blk != bm->block_num) {
@@ -576,14 +603,15 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
     return block;
 }
 
-static int ssd_pick_block_to_clean1(int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s)
+static int ssd_pick_block_to_clean1(int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s) // unused
 {
+    ASSERT(0);
     int i;
     int block = -1;
     int min_valid = s->params.pages_per_block - 1; // one page goes for the summary info
 
     for (i = 0; i < s->params.blocks_per_element; i ++) {
-        if (_ssd_pick_block_to_clean(i, plane_num, elem_num, metadata, s)) {
+        if (_ssd_pick_block_to_clean(i, plane_num, elem_num, metadata, s, UNHEALTHY)) {
             if (metadata->block_usage[i].num_valid < min_valid) {
                 min_valid = metadata->block_usage[i].num_valid;
                 block = i;
@@ -600,9 +628,9 @@ static int ssd_pick_block_to_clean1(int plane_num, int elem_num, ssd_element_met
     }
 }
 
-static int ssd_pick_block_to_clean(int plane_num, int elem_num, double *mcost, ssd_element_metadata *metadata, ssd_t *s)
+static int ssd_pick_block_to_clean(int plane_num, int elem_num, double *mcost, ssd_element_metadata *metadata, ssd_t *s, int health)
 {
-    return ssd_pick_block_to_clean2(plane_num, elem_num, mcost, metadata, s);
+    return ssd_pick_block_to_clean2(plane_num, elem_num, mcost, metadata, s, health);
 }
 
 /*
@@ -650,6 +678,7 @@ static double _ssd_clean_block_partially(int plane_num, int elem_num, ssd_t *s)
 
 double ssd_clean_block_partially(int plane_num, int elem_num, ssd_t *s)
 {
+    ASSERT(0);
     ssd_element_metadata *metadata = &(s->elements[elem_num].metadata);
     plane_metadata *pm = &metadata->plane_meta[plane_num];
     double cost = 0;
@@ -658,7 +687,7 @@ double ssd_clean_block_partially(int plane_num, int elem_num, ssd_t *s)
     // see if we've already started the cleaning
     if (!pm->clean_in_progress) {
         // pick a block to be cleaned
-        pm->clean_in_block = ssd_pick_block_to_clean(plane_num, elem_num, &mcost, metadata, s);
+        pm->clean_in_block = ssd_pick_block_to_clean(plane_num, elem_num, &mcost, metadata, s, UNHEALTHY); // TODO: is this function ever used?
         pm->clean_in_progress = 1;
     }
 
@@ -695,7 +724,7 @@ double _ssd_clean_block_fully(int blk, int plane_num, int elem_num, ssd_element_
     return cost;
 }
 
-static double ssd_clean_block_fully(int plane_num, int elem_num, ssd_t *s)
+static double ssd_clean_block_fully(int plane_num, int elem_num, ssd_t *s, int health)
 {
     int blk;
     double cost = 0;
@@ -705,7 +734,7 @@ static double ssd_clean_block_fully(int plane_num, int elem_num, ssd_t *s)
 
     ASSERT((pm->clean_in_progress == 0) && (pm->clean_in_block = -1));
 
-    blk = ssd_pick_block_to_clean(plane_num, elem_num, &mcost, metadata, s);
+    blk = ssd_pick_block_to_clean(plane_num, elem_num, &mcost, metadata, s, health);
     ASSERT(metadata->block_usage[blk].plane_num == plane_num);
 
     cost = _ssd_clean_block_fully(blk, plane_num, elem_num, metadata, s);
@@ -818,8 +847,9 @@ static double ssd_clean_blocks_random(int plane_num, int elem_num, ssd_t *s)
  * usage. then we select blocks with the least usage and clean
  * them.
  */
-static double ssd_clean_blocks_greedy(int plane_num, int elem_num, ssd_t *s)
+static double ssd_clean_blocks_greedy(int plane_num, int elem_num, ssd_t *s) // called only if no copyback
 {
+    ASSERT(0);
     double cost = 0;
     double avg_lifetime;
     int i;
@@ -832,7 +862,7 @@ static double ssd_clean_blocks_greedy(int plane_num, int elem_num, ssd_t *s)
 
     //////////////////////////////////////////////////////////////////////////////
     // find the average life time of all the blocks in this element
-    avg_lifetime = ssd_compute_avg_lifetime(plane_num, elem_num, s);
+    avg_lifetime = ssd_compute_avg_lifetime(plane_num, elem_num, s, UNHEALTHY);
 
     /////////////////////////////////////////////////////////////////////////////
     // we now have a hash table of blocks, where the key of each
@@ -885,7 +915,7 @@ static double ssd_clean_blocks_greedy(int plane_num, int elem_num, ssd_t *s)
 
                 // okies, finally here we're with the block to be cleaned.
                 // invoke cleaning until we reach the high watermark.
-                cost += _ssd_clean_block_fully(blk, metadata->block_usage[blk].plane_num, elem_num, metadata, s);
+                cost += _ssd_clean_block_fully(blk, metadata->block_usage[blk].plane_num, elem_num, metadata, s); // TODO: add health?
 
                 if (ssd_stop_cleaning(plane_num, elem_num, s)) {
                     // no more cleaning is required -- so quit.
@@ -912,11 +942,11 @@ static double ssd_clean_blocks_greedy(int plane_num, int elem_num, ssd_t *s)
     return cost;
 }
 
-double ssd_clean_element_no_copyback(int elem_num, ssd_t *s)
+double ssd_clean_element_no_copyback(int elem_num, ssd_t *s) // YIXIN: not used in current setting
 {
     double cost = 0;
 
-    if (!ssd_start_cleaning(-1, elem_num, s)) {
+    if (!ssd_start_cleaning_unhealthy(-1, elem_num, s)) {
         return cost;
     }
 
@@ -939,7 +969,7 @@ double ssd_clean_element_no_copyback(int elem_num, ssd_t *s)
     return cost;
 }
 
-double ssd_clean_plane_copyback(int plane_num, int elem_num, ssd_t *s)
+double ssd_clean_plane_copyback(int plane_num, int elem_num, ssd_t *s, int health)
 {
     double cost = 0;
 
@@ -948,7 +978,7 @@ double ssd_clean_plane_copyback(int plane_num, int elem_num, ssd_t *s)
     switch(s->params.cleaning_policy) {
         case DISKSIM_SSD_CLEANING_POLICY_GREEDY_WEAR_AGNOSTIC:
         case DISKSIM_SSD_CLEANING_POLICY_GREEDY_WEAR_AWARE:
-            cost = ssd_clean_block_fully(plane_num, elem_num, s);
+            cost = ssd_clean_block_fully(plane_num, elem_num, s, health);
             break;
 
         case DISKSIM_SSD_CLEANING_POLICY_RANDOM:
@@ -965,7 +995,7 @@ double ssd_clean_plane_copyback(int plane_num, int elem_num, ssd_t *s)
  * 1. find a plane to clean in each of the parallel unit
  * 2. invoke copyback cleaning on all such planes simultaneously
  */
-double ssd_clean_element_copyback(int elem_num, ssd_t *s)
+double ssd_clean_element_copyback_healthy(int elem_num, ssd_t *s)
 {
     // this means that some (or all) planes require cleaning
     int clean_req = 0;
@@ -976,7 +1006,52 @@ double ssd_clean_element_copyback(int elem_num, ssd_t *s)
     int tot_cleans = 0;
 
     for (i = 0; i < SSD_PARUNITS_PER_ELEM(s); i ++) {
-        if ((plane_to_clean[i] = ssd_start_cleaning_parunit(i, elem_num, s)) != -1) {
+        if ((plane_to_clean[i] = ssd_start_cleaning_parunit_healthy(i, elem_num, s)) != -1) {
+            clean_req = 1;
+        }
+    }
+
+    if (clean_req) {
+        for (i = 0; i < SSD_PARUNITS_PER_ELEM(s); i ++) {
+            double cleaning_cost = 0;
+            int plane_num = plane_to_clean[i];
+
+            if (plane_num == -1) {
+                // don't force cleaning
+                continue;
+            }
+
+            if (metadata->plane_meta[plane_num].clean_in_progress) {
+                metadata->plane_meta[plane_num].clean_in_progress = 0;
+                metadata->plane_meta[plane_num].clean_in_block = -1;
+            }
+
+            metadata->active_healthy_page = metadata->plane_meta[plane_num].active_healthy_page;
+            cleaning_cost = ssd_clean_plane_copyback(plane_num, elem_num, s, HEALTHY);
+
+            tot_cleans ++;
+
+            if (max_cleaning_cost < cleaning_cost) {
+                max_cleaning_cost = cleaning_cost;
+            }
+        }
+    }
+
+    return max_cleaning_cost;
+}
+
+double ssd_clean_element_copyback_unhealthy(int elem_num, ssd_t *s)
+{
+    // this means that some (or all) planes require cleaning
+    int clean_req = 0;
+    int i;
+    double max_cleaning_cost = 0;
+    int plane_to_clean[SSD_MAX_PARUNITS_PER_ELEM];
+    ssd_element_metadata *metadata = &s->elements[elem_num].metadata;
+    int tot_cleans = 0;
+
+    for (i = 0; i < SSD_PARUNITS_PER_ELEM(s); i ++) {
+        if ((plane_to_clean[i] = ssd_start_cleaning_parunit_unhealthy(i, elem_num, s)) != -1) {
             clean_req = 1;
         }
     }
@@ -997,7 +1072,7 @@ double ssd_clean_element_copyback(int elem_num, ssd_t *s)
             }
 
             metadata->active_page = metadata->plane_meta[plane_num].active_page;
-            cleaning_cost = ssd_clean_plane_copyback(plane_num, elem_num, s);
+            cleaning_cost = ssd_clean_plane_copyback(plane_num, elem_num, s, UNHEALTHY);
 
             tot_cleans ++;
 
@@ -1016,7 +1091,8 @@ double ssd_clean_element(ssd_t *s, int elem_num)
     if (s->params.copy_back == SSD_COPY_BACK_DISABLE) {
         cost = ssd_clean_element_no_copyback(elem_num, s);
     } else {
-        cost = ssd_clean_element_copyback(elem_num, s);
+        cost = ssd_clean_element_copyback_healthy(elem_num, s);
+        cost += ssd_clean_element_copyback_unhealthy(elem_num, s);
     }
     return cost;
 }
@@ -1026,7 +1102,7 @@ int ssd_next_plane_in_parunit(int plane_num, int parunit_num, int elem_num, ssd_
     return (parunit_num*SSD_PLANES_PER_PARUNIT(s) + (plane_num+1)%SSD_PLANES_PER_PARUNIT(s));
 }
 
-int ssd_start_cleaning_parunit(int parunit_num, int elem_num, ssd_t *s)
+int ssd_start_cleaning_parunit_healthy(int parunit_num, int elem_num, ssd_t *s)
 {
     int i;
     int start;
@@ -1035,7 +1111,28 @@ int ssd_start_cleaning_parunit(int parunit_num, int elem_num, ssd_t *s)
     i = start;
     do {
         ASSERT(parunit_num == s->elements[elem_num].metadata.plane_meta[i].parunit_num);
-        if (ssd_start_cleaning(i, elem_num, s)) {
+        if (ssd_start_cleaning_healthy(i, elem_num, s)) {
+            s->elements[elem_num].metadata.parunits[parunit_num].plane_to_clean = \
+                ssd_next_plane_in_parunit(i, parunit_num, elem_num, s);
+            return i;
+        }
+
+        i = ssd_next_plane_in_parunit(i, parunit_num, elem_num, s);
+    } while (i != start);
+
+    return -1;
+}
+
+int ssd_start_cleaning_parunit_unhealthy(int parunit_num, int elem_num, ssd_t *s)
+{
+    int i;
+    int start;
+
+    start = s->elements[elem_num].metadata.parunits[parunit_num].plane_to_clean;
+    i = start;
+    do {
+        ASSERT(parunit_num == s->elements[elem_num].metadata.plane_meta[i].parunit_num);
+        if (ssd_start_cleaning_unhealthy(i, elem_num, s)) {
             s->elements[elem_num].metadata.parunits[parunit_num].plane_to_clean = \
                 ssd_next_plane_in_parunit(i, parunit_num, elem_num, s);
             return i;
@@ -1051,14 +1148,25 @@ int ssd_start_cleaning_parunit(int parunit_num, int elem_num, ssd_t *s)
  * invoke cleaning when the number of free blocks drop below a
  * certain threshold (in a plane or an element).
  */
-int ssd_start_cleaning(int plane_num, int elem_num, ssd_t *s)
+int ssd_start_cleaning_unhealthy(int plane_num, int elem_num, ssd_t *s)
 {
     if (plane_num == -1) {
-        unsigned int low = (unsigned int)LOW_WATERMARK_PER_ELEMENT(s);
-        return (s->elements[elem_num].metadata.tot_free_blocks <= low);
+        unsigned int low = (unsigned int)LOW_UNHEALTHY_WATERMARK_PER_ELEMENT(s);
+        return (s->elements[elem_num].metadata.tot_free_blocks - s->elements[elem_num].metadata.tot_free_healthy_blocks <= low);
     } else {
-        int low = (int)LOW_WATERMARK_PER_PLANE(s);
-        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_blocks <= low);
+        int low = (int)LOW_UNHEALTHY_WATERMARK_PER_PLANE(s);
+        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_blocks - s->elements[elem_num].metadata.plane_meta[plane_num].free_healthy_blocks <= low);
+    }
+}
+
+int ssd_start_cleaning_healthy(int plane_num, int elem_num, ssd_t *s)
+{
+    if (plane_num == -1) {
+        unsigned int low = (unsigned int)LOW_HEALTHY_WATERMARK_PER_ELEMENT(s);
+        return (s->elements[elem_num].metadata.tot_free_healthy_blocks <= low);
+    } else {
+        int low = (int)LOW_HEALTHY_WATERMARK_PER_PLANE(s);
+        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_healthy_blocks <= low);
     }
 }
 
@@ -1066,14 +1174,25 @@ int ssd_start_cleaning(int plane_num, int elem_num, ssd_t *s)
  * stop cleaning when sufficient number of free blocks
  * are generated (in a plane or an element).
  */
-int ssd_stop_cleaning(int plane_num, int elem_num, ssd_t *s)
+int ssd_stop_cleaning_unhealthy(int plane_num, int elem_num, ssd_t *s)
 {
     if (plane_num == -1) {
-        unsigned int high = (unsigned int)HIGH_WATERMARK_PER_ELEMENT(s);
-        return (s->elements[elem_num].metadata.tot_free_blocks > high);
+        unsigned int high = (unsigned int)HIGH_UNHEALTHY_WATERMARK_PER_ELEMENT(s);
+        return (s->elements[elem_num].metadata.tot_free_blocks - s->elements[elem_num].metadata.tot_free_healthy_blocks > high);
     } else {
-        int high = (int)HIGH_WATERMARK_PER_PLANE(s);
-        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_blocks > high);
+        int high = (int)HIGH_UNHEALTHY_WATERMARK_PER_PLANE(s);
+        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_blocks - s->elements[elem_num].metadata.plane_meta[plane_num].free_healthy_blocks > high);
+    }
+}
+
+int ssd_stop_cleaning_healthy(int plane_num, int elem_num, ssd_t *s)
+{
+    if (plane_num == -1) {
+        unsigned int high = (unsigned int)HIGH_HEALTHY_WATERMARK_PER_ELEMENT(s);
+        return (s->elements[elem_num].metadata.tot_free_healthy_blocks > high);
+    } else {
+        int high = (int)HIGH_HEALTHY_WATERMARK_PER_PLANE(s);
+        return (s->elements[elem_num].metadata.plane_meta[plane_num].free_healthy_blocks > high);
     }
 }
 

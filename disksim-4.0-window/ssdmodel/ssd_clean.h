@@ -32,6 +32,18 @@
 #define LOW_WATERMARK_PER_PLANE(s)      ((s)->params.blocks_per_plane * ((1.0*(s)->params.min_freeblks_percent)/100.0))
 #define HIGH_WATERMARK_PER_PLANE(s)     (LOW_WATERMARK_PER_PLANE(s) + 1)
 
+#define LOW_UNHEALTHY_WATERMARK_PER_ELEMENT(s) (((s)->params.unhealthy_blocks*(s)->params.blocks_per_element/100) * ((1.0*(s)->params.min_freeblks_percent)/100.0))
+#define HIGH_UNHEALTHY_WATERMARK_PER_ELEMENT(s)   (LOW_UNHEALTHY_WATERMARK_PER_ELEMENT(s) + 1)
+
+#define LOW_UNHEALTHY_WATERMARK_PER_PLANE(s)      (((s)->params.unhealthy_blocks*(s)->params.blocks_per_plane) * ((1.0*(s)->params.min_freeblks_percent)/100.0))
+#define HIGH_UNHEALTHY_WATERMARK_PER_PLANE(s)     (LOW_UNHEALTHY_WATERMARK_PER_PLANE(s) + 1)
+
+#define LOW_HEALTHY_WATERMARK_PER_ELEMENT(s) (LOW_WATERMARK_PER_ELEMENT(s) - LOW_UNHEALTHY_WATERMARK_PER_ELEMENT(s))
+#define HIGH_HEALTHY_WATERMARK_PER_ELEMENT(s)   (LOW_HEALTHY_WATERMARK_PER_ELEMENT(s) + 1)
+
+#define LOW_HEALTHY_WATERMARK_PER_PLANE(s) (LOW_WATERMARK_PER_PLANE(s) - LOW_UNHEALTHY_WATERMARK_PER_PLANE(s))
+#define HIGH_HEALTHY_WATERMARK_PER_PLANE(s)   (LOW_HEALTHY_WATERMARK_PER_PLANE(s) + 1)
+
 #else
 
 #define LOW_WATERMARK_PER_ELEMENT(s)    (800)
@@ -49,7 +61,7 @@ typedef struct _usage_table {
     int *block;
 } usage_table;
 
-double ssd_compute_avg_lifetime(int plane_num, int elem_num, ssd_t *s);
+double ssd_compute_avg_lifetime(int plane_num, int elem_num, ssd_t *s, int health);
 double ssd_clean_block_partially(int plane_num, int elem_num, ssd_t *s);
 double ssd_clean_element_no_copyback(int elem_num, ssd_t *s);
 int ssd_free_bits(int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s);
@@ -58,9 +70,12 @@ void ssd_assert_plane_freebits(int plane_num, int elem_num, ssd_element_metadata
 double _ssd_clean_block_fully(int blk, int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s);
 double ssd_clean_element(ssd_t *s, int elem_num);
 int ssd_next_plane_in_parunit(int plane_num, int parunit_num, int elem_num, ssd_t *s);
-int ssd_start_cleaning_parunit(int parunit_num, int elem_num, ssd_t *s);
-int ssd_start_cleaning(int plane_num, int elem_num, ssd_t *s);
-int ssd_stop_cleaning(int plane_num, int elem_num, ssd_t *s);
+int ssd_start_cleaning_parunit_healthy(int parunit_num, int elem_num, ssd_t *s);
+int ssd_start_cleaning_parunit_unhealthy(int parunit_num, int elem_num, ssd_t *s);
+int ssd_start_cleaning_healthy(int plane_num, int elem_num, ssd_t *s);
+int ssd_start_cleaning_unhealthy(int plane_num, int elem_num, ssd_t *s);
+int ssd_stop_cleaning_healthy(int plane_num, int elem_num, ssd_t *s);
+int ssd_stop_cleaning_unhealthy(int plane_num, int elem_num, ssd_t *s);
 
 #endif
 

@@ -1269,7 +1269,8 @@ void ssd_printcleanstats(int *set, int setsize, char *sourcestr)
 
                 ssd_element_stat *stat = &(s->elements[j].stat);
 
-                avg_lifetime = ssd_compute_avg_lifetime(-1, j, s);
+                avg_lifetime = ssd_compute_avg_lifetime(-1, j, s, HEALTHY);
+                avg_lifetime = ssd_compute_avg_lifetime(-1, j, s, UNHEALTHY);
 
                 fprintf(outputfile, "%s #%d elem #%d   Total reqs issued:\t%d\n",
                     sourcestr, set[i], j, s->elements[j].stat.tot_reqs_issued);
@@ -1492,7 +1493,7 @@ int ssd_page_is_hot(ssd_t *s, ssd_element_metadata *metadata, int lpn) {
   }
   switch (metadata->block_usage[ppn].health) {
     case HEALTHY:
-      return (SSD_PAGE_TO_BLOCK(ppn, s) == SSD_PAGE_TO_BLOCK(metadata->active_healthy_page, s));
+      return (metadata->block_usage[ppn].state == SSD_BLOCK_INUSE);
     default:
       return 1;
   }
