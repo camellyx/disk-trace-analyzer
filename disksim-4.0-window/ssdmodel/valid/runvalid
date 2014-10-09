@@ -1,5 +1,12 @@
 #!/bin/sh
 
+cd ../../
+rm src/disksim
+make
+cd ssdmodel/valid
+
+clear
+
 if [ "x${RUNVALID_PREFIX}" != "x" ];
 then
 PREFIX=${RUNVALID_PREFIX}
@@ -41,8 +48,8 @@ echo "IOzone: average SSD response time should be around 6.394276 ms"
 $PREFIX/disksim ssd-iozone-5-unhealthy.parv ssd-iozone.outv ascii ssd-iozone-aligned2-100K.trace 0 
 grep "ssd Response time average:" ssd-iozone.outv | grep -v "#"
 
-echo "Postmark: average SSD response time should be around 4.140330 ms"
-$PREFIX/disksim ssd-iozone-5-unhealthy.parv ssd-postmark.outv ascii ssd-postmark-aligned2.trace 0 
-grep "ssd Response time average:" ssd-postmark.outv | grep -v "#"
+#echo "Postmark: average SSD response time should be around 4.140330 ms"
+#$PREFIX/disksim ssd-iozone-5-unhealthy.parv ssd-postmark.outv ascii ssd-postmark-aligned2.trace 0 
+#grep "ssd Response time average:" ssd-postmark.outv | grep -v "#"
 
 

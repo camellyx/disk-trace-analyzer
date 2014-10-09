@@ -385,6 +385,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
 
         case SSD_COPY_BACK_ENABLE:
             for (i = 0; i < (unsigned int)currdisk->params.planes_per_pkg; i ++) {
+                // active unhealthy block
                 int plane_active_block = SSD_PAGE_TO_BLOCK(metadata->plane_meta[i].active_page, currdisk);
 
                 bitpos = ssd_block_to_bitpos(currdisk, plane_active_block);
@@ -393,6 +394,18 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
                 metadata->block_usage[plane_active_block].bsn = bsn ++;
                 metadata->tot_free_blocks --;
                 metadata->plane_meta[i].free_blocks --;
+
+                // active healthy block
+                plane_active_block = SSD_PAGE_TO_BLOCK(metadata->plane_meta[i].active_healthy_page, currdisk);
+
+                bitpos = ssd_block_to_bitpos(currdisk, plane_active_block);
+                ssd_set_bit(metadata->free_blocks, bitpos);
+                metadata->block_usage[plane_active_block].state = SSD_BLOCK_INUSE;
+                metadata->block_usage[plane_active_block].bsn = bsn ++;
+                metadata->tot_free_blocks --;
+                metadata->tot_free_healthy_blocks --;
+                metadata->plane_meta[i].free_blocks --;
+                metadata->plane_meta[i].free_healthy_blocks --;
             }
         break;
 

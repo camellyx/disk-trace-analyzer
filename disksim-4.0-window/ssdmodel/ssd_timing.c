@@ -171,6 +171,7 @@ void ssd_assert_free_blocks(ssd_t *s, ssd_element_metadata *metadata)
  */
 void ssd_assert_page_version(int prev_page, int active_page, ssd_element_metadata *metadata, ssd_t *s)
 {
+/*
     int prev_block = prev_page / s->params.pages_per_block;
     int active_block = active_page / s->params.pages_per_block;
 
@@ -179,6 +180,7 @@ void ssd_assert_page_version(int prev_page, int active_page, ssd_element_metadat
     } else {
         ASSERT(prev_page < active_page);
     }
+*/
 }
 
 void ssd_assert_valid_pages(int plane_num, ssd_element_metadata *metadata, ssd_t *s)
@@ -307,9 +309,10 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
     unsigned int active_block;
     unsigned int pagepos_in_block;
     unsigned int active_plane;
+    int hot = ssd_page_is_hot(s, metadata, lpn);
 
-    if (ssd_page_is_hot(s, metadata, lpn)) {
-        active_page = metadata->active_healthy_page;
+    if (hot) {
+        active_page = metadata->active_page;
         active_block = SSD_PAGE_TO_BLOCK(active_page, s);
         pagepos_in_block = active_page % s->params.pages_per_block;
         active_plane = metadata->block_usage[active_block].plane_num;
@@ -370,8 +373,13 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
     //printf("lpn %d active pg %d\n", lpn, active_page);
 
     // go to the next free page
-    metadata->active_page = active_page + 1;
-    metadata->plane_meta[active_plane].active_page = metadata->active_page;
+    if (hot) {
+        metadata->active_page = active_page + 1;
+        metadata->plane_meta[active_plane].active_page = metadata->active_page;
+    } else {
+        metadata->active_healthy_page = active_page + 1;
+        metadata->plane_meta[active_plane].active_healthy_page = metadata->active_healthy_page;
+    }
 
     // if this is the last data page on the block, let us write the
     // summary page also
@@ -499,9 +507,9 @@ void _ssd_alloc_active_healthy_block(int plane_num, int elem_num, ssd_t *s) // h
     int bitpos;
 
     if (plane_num != -1) {
-        prev_pos = metadata->plane_meta[plane_num].block_alloc_pos;
+        prev_pos = metadata->plane_meta[plane_num].healthy_block_alloc_pos;
     } else {
-        prev_pos = metadata->block_alloc_pos;
+        prev_pos = metadata->healthy_block_alloc_pos;
     }
 
     // find a free bit
@@ -519,8 +527,8 @@ void _ssd_alloc_active_healthy_block(int plane_num, int elem_num, ssd_t *s) // h
             //printf("So, starting the search again for plane %d\n", plane_num);
 
             // start from the beginning
-            metadata->plane_meta[plane_num].block_alloc_pos = plane_num * s->params.blocks_per_plane;
-            prev_pos = metadata->plane_meta[plane_num].block_alloc_pos;
+            metadata->plane_meta[plane_num].healthy_block_alloc_pos = plane_num * s->params.blocks_per_plane;
+            prev_pos = metadata->plane_meta[plane_num].healthy_block_alloc_pos;
             bitpos = ssd_find_zero_bit(free_blocks, s->params.blocks_per_element, prev_pos);
             ASSERT((bitpos >= 0) && (bitpos < s->params.blocks_per_element));
 
@@ -531,10 +539,10 @@ void _ssd_alloc_active_healthy_block(int plane_num, int elem_num, ssd_t *s) // h
             }
         }
 
-        metadata->plane_meta[plane_num].block_alloc_pos = \
+        metadata->plane_meta[plane_num].healthy_block_alloc_pos = \
             (plane_num * s->params.blocks_per_plane) + ((bitpos+1) % s->params.blocks_per_plane);
     } else {
-        metadata->block_alloc_pos = (bitpos+1) % s->params.blocks_per_element;
+        metadata->healthy_block_alloc_pos = (bitpos+1) % s->params.blocks_per_element;
     }
 
     // find the block num
@@ -570,8 +578,8 @@ void _ssd_alloc_active_healthy_block(int plane_num, int elem_num, ssd_t *s) // h
         metadata->block_usage[active_block].bsn = metadata->bsn ++;
 
         // start from the first page of the active block
-        pm->active_page = active_block * s->params.pages_per_block;
-        metadata->active_page = pm->active_page;
+        pm->active_healthy_page = active_block * s->params.pages_per_block;
+        metadata->active_healthy_page = pm->active_healthy_page;
 
         //ssd_assert_plane_freebits(plane_num, elem_num, metadata, s);
     } else {
