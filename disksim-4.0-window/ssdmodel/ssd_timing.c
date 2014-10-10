@@ -161,6 +161,7 @@ void ssd_assert_free_blocks(ssd_t *s, ssd_element_metadata *metadata)
     for (i = 0; i < s->params.planes_per_pkg; i ++) {
         tmp += metadata->plane_meta[i].free_blocks;
         tmp1 += metadata->plane_meta[i].free_healthy_blocks;
+        ASSERT(metadata->plane_meta[i].free_blocks >= metadata->plane_meta[i].free_healthy_blocks);
     }
     ASSERT(metadata->tot_free_blocks == tmp);
     ASSERT(metadata->tot_free_healthy_blocks == tmp1);
@@ -426,10 +427,12 @@ void _ssd_alloc_active_block(int plane_num, int elem_num, ssd_t *s) // unhealthy
     // find a free bit
     bitpos = ssd_find_zero_bit(free_blocks, s->params.blocks_per_element, prev_pos);
     ASSERT((bitpos >= 0) && (bitpos < s->params.blocks_per_element));
+    active_block = ssd_bitpos_to_block(bitpos, s);
 
     // check if we found the free bit in the plane we wanted to
     if (plane_num != -1) {
-        if (ssd_bitpos_to_plane(bitpos, s) != plane_num) {
+        if (ssd_bitpos_to_plane(bitpos, s) != plane_num ||
+            metadata->block_usage[active_block].health != UNHEALTHY) {
 
             //printf("Error: We wanted a free block in plane %d but found another in %d\n",
             //  plane_num, ssd_bitpos_to_plane(bitpos, s));
@@ -442,7 +445,6 @@ void _ssd_alloc_active_block(int plane_num, int elem_num, ssd_t *s) // unhealthy
             ASSERT((bitpos >= 0) && (bitpos < s->params.blocks_per_element));
 
             if (ssd_bitpos_to_plane(bitpos, s) != plane_num) {
-                YXDBG();
                 printf("Error: this plane %d is full\n", plane_num);
                 printf("this case is not yet handled\n");
                 exit(1);
@@ -466,6 +468,7 @@ void _ssd_alloc_active_block(int plane_num, int elem_num, ssd_t *s) // unhealthy
         ASSERT(metadata->block_usage[active_block].bsn == 0);
         ASSERT(metadata->block_usage[active_block].num_valid == 0);
         ASSERT(metadata->block_usage[active_block].state == SSD_BLOCK_CLEAN);
+        ASSERT(metadata->block_usage[active_block].health == UNHEALTHY);
 
         if (plane_num == -1) {
             plane_num = metadata->block_usage[active_block].plane_num;
@@ -533,7 +536,6 @@ void _ssd_alloc_active_healthy_block(int plane_num, int elem_num, ssd_t *s) // h
             ASSERT((bitpos >= 0) && (bitpos < s->params.blocks_per_element));
 
             if (ssd_bitpos_to_plane(bitpos, s) != plane_num) {
-                YXDBG();
                 printf("Error: this plane %d is full\n", plane_num);
                 printf("this case is not yet handled\n");
                 exit(1);
@@ -557,6 +559,7 @@ void _ssd_alloc_active_healthy_block(int plane_num, int elem_num, ssd_t *s) // h
         ASSERT(metadata->block_usage[active_block].bsn == 0);
         ASSERT(metadata->block_usage[active_block].num_valid == 0);
         ASSERT(metadata->block_usage[active_block].state == SSD_BLOCK_CLEAN);
+        ASSERT(metadata->block_usage[active_block].health == HEALTHY);
 
         if (plane_num == -1) {
             plane_num = metadata->block_usage[active_block].plane_num;
@@ -569,6 +572,8 @@ void _ssd_alloc_active_healthy_block(int plane_num, int elem_num, ssd_t *s) // h
         // reduce the total number of free blocks
         metadata->tot_free_blocks --;
         pm->free_blocks --;
+        metadata->tot_free_healthy_blocks --;
+        pm->free_healthy_blocks --;
 
         //assertion
         ssd_assert_free_blocks(s, metadata);
@@ -648,7 +653,6 @@ listnode **ssd_pick_parunits(ssd_req **reqs, int total, int elem_num, ssd_elemen
             if (s->params.alloc_pool_logic == SSD_ALLOC_POOL_PLANE) {
                 plane_num = metadata->block_usage[prev_block].plane_num;
             } else {
-                //YXDBG();
                 // find a plane with the max no of free blocks
                 j = metadata->plane_to_write;
                 do {
@@ -663,11 +667,11 @@ listnode **ssd_pick_parunits(ssd_req **reqs, int total, int elem_num, ssd_elemen
                     }
                     active_bsn = metadata->block_usage[active_block].bsn;
 
-                    //YXDBGsn("active_bsn", active_bsn);
-                    //YXDBGsn("  prev_bsn", prev_bsn); // aha, when transition from healthy to unhealthy
+                    //YXDBG();
                     // see if we can write to this block
-                    if ((active_bsn > prev_bsn) ||
-                        ((active_bsn == prev_bsn) && (pm->active_page > (unsigned int)prev_page))) {
+                    //if ((active_bsn > prev_bsn) ||
+                    //    ((active_bsn == prev_bsn) && (pm->active_page > (unsigned int)prev_page))) {
+                    if (1) {
                         int free_pages_in_act_blk;
                         int k;
                         int p;
@@ -824,6 +828,7 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                     // issue the write to the current active page.
                     // we need to transfer the data across the serial pins for write.
                     metadata->active_page = metadata->plane_meta[plane_num].active_page;
+                    metadata->active_healthy_page = metadata->plane_meta[plane_num].active_healthy_page;
                     //printf("elem %d plane %d ", elem_num, plane_num);
                     parunit_op_cost[i] = _ssd_write_page_osr(s, metadata, lpn);
                 }

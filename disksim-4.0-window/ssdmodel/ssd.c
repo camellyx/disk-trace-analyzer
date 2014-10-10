@@ -1492,7 +1492,11 @@ int ssd_page_is_hot(ssd_t *s, ssd_element_metadata *metadata, int lpn) {
     return 0;
   }
   unsigned int block = SSD_PAGE_TO_BLOCK(ppn, s);
+  unsigned int plane = metadata->block_usage[block].plane_num;
   if (metadata->block_usage[block].health == HEALTHY && metadata->block_usage[block].state == SSD_BLOCK_INUSE) {
+    return 0;
+  }
+  if (metadata->block_usage[block].health == UNHEALTHY && metadata->plane_meta[plane].clean_in_block == block) {
     return 0;
   }
 //  switch (metadata->block_usage[block].health) {

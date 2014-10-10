@@ -99,7 +99,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     // initialize the free blocks and free pages
     metadata->tot_free_blocks = reserved_blocks;
     metadata->tot_free_healthy_blocks = reserved_blocks - unhealthy_blocks;
-    ASSERT(reserved_blocks - healthy_blocks > 0);
+    ASSERT(reserved_blocks - unhealthy_blocks > 0);
 
     //////////////////////////////////////////////////////////////////////////////
     // assign the gang and init the element's free pages
