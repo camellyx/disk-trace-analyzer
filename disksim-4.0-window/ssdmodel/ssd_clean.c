@@ -140,6 +140,10 @@ void ssd_update_free_block_status(int blk, int plane_num, ssd_element_metadata *
     metadata->tot_free_blocks ++;
     metadata->plane_meta[plane_num].free_blocks ++;
     if (metadata->block_usage[blk].health == HEALTHY) {
+        metadata->tot_free_healthy_blocks ++;
+        metadata->plane_meta[plane_num].free_healthy_blocks ++;
+    }
+    if (metadata->block_usage[blk].health == HEALTHY) {
       metadata->tot_free_healthy_blocks ++;
       metadata->plane_meta[plane_num].free_healthy_blocks ++;
     }

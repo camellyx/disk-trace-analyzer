@@ -429,8 +429,7 @@ void _ssd_alloc_active_block(int plane_num, int elem_num, ssd_t *s) // unhealthy
 
     // check if we found the free bit in the plane we wanted to
     if (plane_num != -1) {
-        if ((ssd_bitpos_to_plane(bitpos, s) != plane_num) && 
-            (metadata->block_usage[active_block].health != HEALTHY)) {
+        if (ssd_bitpos_to_plane(bitpos, s) != plane_num) {
 
             //printf("Error: We wanted a free block in plane %d but found another in %d\n",
             //  plane_num, ssd_bitpos_to_plane(bitpos, s));
@@ -443,6 +442,7 @@ void _ssd_alloc_active_block(int plane_num, int elem_num, ssd_t *s) // unhealthy
             ASSERT((bitpos >= 0) && (bitpos < s->params.blocks_per_element));
 
             if (ssd_bitpos_to_plane(bitpos, s) != plane_num) {
+                YXDBG();
                 printf("Error: this plane %d is full\n", plane_num);
                 printf("this case is not yet handled\n");
                 exit(1);
@@ -533,6 +533,7 @@ void _ssd_alloc_active_healthy_block(int plane_num, int elem_num, ssd_t *s) // h
             ASSERT((bitpos >= 0) && (bitpos < s->params.blocks_per_element));
 
             if (ssd_bitpos_to_plane(bitpos, s) != plane_num) {
+                YXDBG();
                 printf("Error: this plane %d is full\n", plane_num);
                 printf("this case is not yet handled\n");
                 exit(1);
@@ -634,9 +635,11 @@ listnode **ssd_pick_parunits(ssd_req **reqs, int total, int elem_num, ssd_elemen
             int j;
             int prev_bsn = -1;
             int min_valid;
+            int hot;
 
             plane_num = -1;
             lpn = ssd_logical_pageno(reqs[i]->blk, s);
+            hot = ssd_page_is_hot(s, metadata, lpn);
             prev_page = metadata->lba_table[lpn];
             ASSERT(prev_page != -1);
             prev_block = SSD_PAGE_TO_BLOCK(prev_page, s);
@@ -645,6 +648,7 @@ listnode **ssd_pick_parunits(ssd_req **reqs, int total, int elem_num, ssd_elemen
             if (s->params.alloc_pool_logic == SSD_ALLOC_POOL_PLANE) {
                 plane_num = metadata->block_usage[prev_block].plane_num;
             } else {
+                //YXDBG();
                 // find a plane with the max no of free blocks
                 j = metadata->plane_to_write;
                 do {
@@ -652,9 +656,15 @@ listnode **ssd_pick_parunits(ssd_req **reqs, int total, int elem_num, ssd_elemen
                     int active_bsn;
                     plane_metadata *pm = &metadata->plane_meta[j];
 
-                    active_block = SSD_PAGE_TO_BLOCK(pm->active_page, s);
+                    if (hot) {
+                        active_block = SSD_PAGE_TO_BLOCK(pm->active_page, s);
+                    } else {
+                        active_block = SSD_PAGE_TO_BLOCK(pm->active_healthy_page, s);
+                    }
                     active_bsn = metadata->block_usage[active_block].bsn;
 
+                    //YXDBGsn("active_bsn", active_bsn);
+                    //YXDBGsn("  prev_bsn", prev_bsn); // aha, when transition from healthy to unhealthy
                     // see if we can write to this block
                     if ((active_bsn > prev_bsn) ||
                         ((active_bsn == prev_bsn) && (pm->active_page > (unsigned int)prev_page))) {
@@ -685,8 +695,13 @@ listnode **ssd_pick_parunits(ssd_req **reqs, int total, int elem_num, ssd_elemen
                         }
 
                         // select a plane with the most no of free pages
-                        free_pages_in_act_blk = s->params.pages_per_block - ((pm->active_page%s->params.pages_per_block) + additive);
-                        tmp = pm->free_blocks * s->params.pages_per_block + free_pages_in_act_blk;
+                        if (hot) {
+                            free_pages_in_act_blk = s->params.pages_per_block - ((pm->active_page%s->params.pages_per_block) + additive);
+                            tmp = pm->free_blocks * s->params.pages_per_block + free_pages_in_act_blk;
+                        } else {
+                            free_pages_in_act_blk = s->params.pages_per_block - ((pm->active_healthy_page%s->params.pages_per_block) + additive);
+                            tmp = pm->free_healthy_blocks * s->params.pages_per_block + free_pages_in_act_blk;
+                        }
 
                         if (plane_num == -1) {
                             // this is the first plane that satisfies the above criterion

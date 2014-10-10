@@ -1491,12 +1491,17 @@ int ssd_page_is_hot(ssd_t *s, ssd_element_metadata *metadata, int lpn) {
   if (ppn == -1) {
     return 0;
   }
-  switch (metadata->block_usage[ppn].health) {
-    case HEALTHY:
-      return (metadata->block_usage[ppn].state == SSD_BLOCK_INUSE);
-    default:
-      return 1;
+  unsigned int block = SSD_PAGE_TO_BLOCK(ppn, s);
+  if (metadata->block_usage[block].health == HEALTHY && metadata->block_usage[block].state == SSD_BLOCK_INUSE) {
+    return 0;
   }
+//  switch (metadata->block_usage[block].health) {
+//    case HEALTHY:
+//      return (metadata->block_usage[block].state == SSD_BLOCK_INUSE);
+//    default:
+//      return 1;
+//  }
+  return 1;
 }
 
 
