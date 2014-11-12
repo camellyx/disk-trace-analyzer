@@ -720,6 +720,12 @@ double _ssd_clean_block_fully(int blk, int plane_num, int elem_num, ssd_element_
     // stat
     pm->num_cleans ++;
     s->elements[elem_num].stat.num_clean ++;
+    /*
+    if (metadata->block_usage[blk].health == HEALTHY) {
+      pm->num_healthy_cleans ++;
+      s->elements[elem_num].stat.num_healthy_clean ++;
+    }
+    */
 
     do {
         cost += _ssd_clean_block_partially(plane_num, elem_num, s);

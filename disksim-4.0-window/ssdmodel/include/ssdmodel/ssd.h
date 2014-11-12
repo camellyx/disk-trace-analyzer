@@ -470,6 +470,7 @@ int     ssd_logical_pageno(int blkno, ssd_t *s);
 int     ssd_block_to_bitpos(ssd_t *currdisk, int block);
 int     ssd_bitpos_to_block(int bitpos, ssd_t *s);
 void    _ssd_alloc_active_block(int plane_num, int elem_num, ssd_t *s);
+void    _ssd_alloc_active_healthy_block(int plane_num, int elem_num, ssd_t *s);
 int     ssd_free_bits(int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s);
 void    ssd_assert_plane_freebits(int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s);
 double  ssd_read_policy_simple(int count, ssd_t *s);

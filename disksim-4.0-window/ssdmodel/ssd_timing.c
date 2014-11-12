@@ -384,7 +384,7 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
 
     // if this is the last data page on the block, let us write the
     // summary page also
-    if (ssd_last_page_in_block(metadata->active_page, s)) {
+    if (ssd_last_page_in_block(active_page+1, s)) {
         // cost of transferring the summary page data
         cost += ssd_data_transfer_cost(s, SSD_SECTORS_PER_SUMMARY_PAGE);
 
