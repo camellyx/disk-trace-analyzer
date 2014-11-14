@@ -11,6 +11,10 @@
 #ifndef DISKSIM_SSD_H
 #define DISKSIM_SSD_H
 
+#define YXDBG() printf("%s:%d\n", __func__, __LINE__)
+#define YXDBGn(n) printf("%s:%d (%d)\n", __func__, __LINE__, n)
+#define YXDBGsn(s,n) printf("%s:%d (%s\t%d)\n", __func__, __LINE__, s, n)
+
 struct ssd *getssd (int devno);
 
 /* default ssd dev header */
