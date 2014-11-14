@@ -33,7 +33,7 @@ endif
 all: libssdmodel.a
 
 clean:
-	rm -f TAGS *.o libssdmodel.a valid/*.outv
+	rm -f TAGS *.o lib/libssdmodel.a libssdmodel.a valid/*.outv
 	$(MAKE) -C modules clean
 
 realclean: clean
