@@ -208,7 +208,7 @@ ssdmodel_ssd SSD {
      Timing model = 1,
 
      # vp changing the Chip xfer latency from per sector to per byte
-     Chip xfer latency = 0.000025,
+     Chip xfer latency = 0.0000125,
 
      Page read latency = 0.025,
      Page write latency = 0.200,

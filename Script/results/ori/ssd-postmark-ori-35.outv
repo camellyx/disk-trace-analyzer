@@ -1,5 +1,5 @@
 
-*** Output file name: ssd-postmark-ori-35.outv
+*** Output file name: results/ori/ssd-postmark-ori-35.outv
 *** Input trace format: ascii
 *** I/O trace used: ssd-postmark-aligned2.trace
 *** Synthgen to be used?: 0
@@ -155,7 +155,7 @@ Scheduling priority scheme = 0,
 Priority scheduling = 1
    },
 Timing model = 1,
-Chip xfer latency = 0.000025,
+Chip xfer latency = 0.000013,
 Page read latency = 0.025000,
 Page write latency = 0.200000,
 Block erase latency = 1.500000
