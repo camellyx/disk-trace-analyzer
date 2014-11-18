@@ -493,6 +493,7 @@ int ssd_migrate_cold_data(int to_blk, double *mcost, int plane_num, int elem_num
 }
 
 // return 1 if it is ok to clean this block
+// YIXIN: not sure what this fxxking function is doing
 int ssd_pick_wear_aware_with_migration
 (int blk, int block_life, double avg_lifetime, double *cost, int plane_num, int elem_num, ssd_t *s)
 {
@@ -528,9 +529,27 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
     int size;
     int block = -1;
     int min_valid = s->params.pages_per_block - 1; // one page goes for the summary info
+    unsigned int unhealthy_blocks_per_plane = (s->params.unhealthy_blocks * s->params.blocks_per_plane) / 100;
     listnode *greedy_list;
 
     *mcost = 0;
+
+    if (health == UNHEALTHY) {
+      if (plane_num == -1) {
+        // pick the most occupied plane
+        fprintf(stderr, "YIXIN Error: Pick the most occupied plane. (Unimplemented)\n", plane_num);
+        ASSERT(0);
+        exit(1);
+        plane_num = 0;
+      }
+      block = metadata->plane_meta[plane_num].next_unhealthy_block_to_clean;
+      metadata->plane_meta[plane_num].next_unhealthy_block_to_clean += s->params.planes_per_pkg;
+      if (metadata->plane_meta[plane_num].next_unhealthy_block_to_clean / s->params.planes_per_pkg >= s->params.blocks_per_plane) {
+        metadata->plane_meta[plane_num].next_unhealthy_block_to_clean -= unhealthy_blocks_per_plane * s->params.planes_per_pkg;
+      }
+      ASSERT(metadata->plane_meta[plane_num].next_unhealthy_block_to_clean != 16384);
+      return block;
+    }
 
     // find the average life time of all the blocks in this element
     avg_lifetime = ssd_compute_avg_lifetime(plane_num, elem_num, s, health);

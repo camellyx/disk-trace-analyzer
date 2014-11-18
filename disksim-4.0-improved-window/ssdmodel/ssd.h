@@ -34,6 +34,11 @@ typedef struct {
    double  requestedbus;
    double  waitingforbus;
    int     numbuswaits;
+
+   int hot_healthy;
+   int hot_unhealthy;
+   int cold_healthy;
+   int cold_unhealthy;
 } ssd_stat_t;
 
 /*
@@ -122,6 +127,7 @@ typedef struct _plane_metadata {
     int clean_in_progress;          // a flag that is set to 1 when some cleaning is
                                     // going on in this plane
     int clean_in_block;             // which block is being cleaned?
+    unsigned int next_unhealthy_block_to_clean; // YIXIN: next block for in-order cleaning
     int block_alloc_pos;            // block allocation position in a plane
     int healthy_block_alloc_pos;            // block allocation position in a plane
     int parunit_num;                // parallel unit number
@@ -324,6 +330,8 @@ typedef struct _ssd_timing_params {
     int     reserve_blocks;             // percentage of blocks to reserve
 
     int     unhealthy_blocks;           // percentage of unhealthy blocks
+    
+    int     hot_percent_factor;         // percent (1/factor) of cold pool considered hot
 
     int     min_freeblks_percent;       // min free blocks percentage
 

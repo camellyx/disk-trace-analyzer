@@ -32,12 +32,14 @@
 #define LOW_WATERMARK_PER_PLANE(s)      ((s)->params.blocks_per_plane * ((1.0*(s)->params.min_freeblks_percent)/100.0))
 #define HIGH_WATERMARK_PER_PLANE(s)     (LOW_WATERMARK_PER_PLANE(s) + 1)
 
+// unhealthy
 #define LOW_UNHEALTHY_WATERMARK_PER_ELEMENT(s) (((s)->params.unhealthy_blocks*(s)->params.blocks_per_element/100) * ((1.0*(s)->params.min_freeblks_percent)/100.0))
 #define HIGH_UNHEALTHY_WATERMARK_PER_ELEMENT(s)   (LOW_UNHEALTHY_WATERMARK_PER_ELEMENT(s) + 1)
 
 #define LOW_UNHEALTHY_WATERMARK_PER_PLANE(s)      (((s)->params.unhealthy_blocks*(s)->params.blocks_per_plane/100) * ((1.0*(s)->params.min_freeblks_percent)/100.0))
 #define HIGH_UNHEALTHY_WATERMARK_PER_PLANE(s)     (LOW_UNHEALTHY_WATERMARK_PER_PLANE(s) + 1)
 
+// healthy
 #define LOW_HEALTHY_WATERMARK_PER_ELEMENT(s) (LOW_WATERMARK_PER_ELEMENT(s) - LOW_UNHEALTHY_WATERMARK_PER_ELEMENT(s))
 #define HIGH_HEALTHY_WATERMARK_PER_ELEMENT(s)   (LOW_HEALTHY_WATERMARK_PER_ELEMENT(s) + 1)
 

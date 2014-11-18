@@ -24,6 +24,11 @@ static void ssd_statinit (int devno, int firsttime)
    currdisk->stat.requestedbus = 0.0;
    currdisk->stat.waitingforbus = 0.0;
    currdisk->stat.numbuswaits = 0;
+
+   currdisk->stat.hot_healthy= 0;
+   currdisk->stat.hot_unhealthy= 0;
+   currdisk->stat.cold_healthy= 0;
+   currdisk->stat.cold_unhealthy= 0;
 }
 
 void ssd_initialize_diskinfo ()
@@ -151,6 +156,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
 
         metadata->plane_meta[i].active_page = healthy_blocks_to_skip*currdisk->params.pages_per_block;
         metadata->plane_meta[i].active_healthy_page = blocks_to_skip*currdisk->params.pages_per_block;
+        metadata->plane_meta[i].next_unhealthy_block_to_clean = healthy_blocks_per_plane*currdisk->params.planes_per_pkg + i;
         metadata->plane_meta[i].free_blocks = reserved_blocks_per_plane;
         metadata->plane_meta[i].free_healthy_blocks = reserved_blocks_per_plane - unhealthy_blocks_per_plane;
         metadata->plane_meta[i].valid_pages = 0;

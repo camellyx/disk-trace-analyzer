@@ -134,9 +134,13 @@ INIT result->params.reserve_blocks = i;
 This specifies a percentage of total pages in the SSD that must be 
 reserved for cleaning.
 
-PARAM Unhealthy pages percentage		I	1
+PARAM Unhealthy pages percentage	I	1
 TEST (i >= 0)
 INIT result->params.unhealthy_blocks = i;
+
+PARAM Hot percentage factor	I	1
+TEST (i >= 0)
+INIT result->params.hot_percent_factor = i;
 
 This specifies a percentage of total pages in the SSD that must be 
 reserved for cleaning.

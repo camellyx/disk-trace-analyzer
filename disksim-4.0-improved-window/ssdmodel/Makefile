@@ -42,7 +42,7 @@ realclean: clean
 
 distclean: realclean
 	rm -f *~ *.a
-	rm -rf ../lib ../include
+	rm -rf lib include
 	$(MAKE) -C modules distclean
 
 .PHONY: modules

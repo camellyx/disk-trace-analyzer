@@ -124,6 +124,7 @@ ssdmodel_ssd SSD {
      # vp - this is a percentage of total pages in the ssd
      Reserve pages percentage = 10,
      Unhealthy pages percentage = 5,
+     Hot percentage factor = 16,
 
      # vp - min percentage of free blocks needed. if the free 
      # blocks drop below this, cleaning kicks in

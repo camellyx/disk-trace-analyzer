@@ -1153,15 +1153,27 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
    int i;
    int numbuswaits = 0;
    double waitingforbus = 0.0;
+   int hot_healthy = 0;
+   int hot_unhealthy = 0;
+   int cold_healthy = 0;
+   int cold_unhealthy = 0;
 
    for (i=0; i<setsize; i++) {
       ssd_t *currdisk = getssd (set[i]);
       numbuswaits += currdisk->stat.numbuswaits;
       waitingforbus += currdisk->stat.waitingforbus;
+      hot_healthy += currdisk->stat.hot_healthy;
+      hot_unhealthy += currdisk->stat.hot_unhealthy;
+      cold_healthy += currdisk->stat.cold_healthy;
+      cold_unhealthy += currdisk->stat.cold_unhealthy;
    }
 
    fprintf(outputfile, "%sTotal bus wait time: %f\n", prefix, waitingforbus);
    fprintf(outputfile, "%sNumber of bus waits: %d\n", prefix, numbuswaits);
+   fprintf(outputfile, "%sHot healthy: %d\n", prefix, hot_healthy);
+   fprintf(outputfile, "%sHot unhealth: %d\n", prefix, hot_unhealthy);
+   fprintf(outputfile, "%sCold healthy: %d\n", prefix, cold_healthy);
+   fprintf(outputfile, "%sCold unhealth: %d\n", prefix, cold_unhealthy);
 }
 
 void ssd_print_block_lifetime_distribution(int elem_num, ssd_t *s, int ssdno, double avg_lifetime, char *sourcestr)
@@ -1494,17 +1506,21 @@ int ssd_page_is_hot(ssd_t *s, ssd_element_metadata *metadata, int lpn) {
   unsigned int block = SSD_PAGE_TO_BLOCK(ppn, s);
   unsigned int plane = metadata->block_usage[block].plane_num;
   if (metadata->block_usage[block].health == HEALTHY && metadata->block_usage[block].state != SSD_BLOCK_INUSE) {
+    s->stat.cold_healthy++;
+    if (s->stat.cold_healthy % s->params.hot_percent_factor == 0) {
+      return 1;
+    }
     return 0;
   }
   if (metadata->block_usage[block].health == UNHEALTHY && metadata->plane_meta[plane].clean_in_block == block) {
+    s->stat.cold_unhealthy++;
     return 0;
   }
-//  switch (metadata->block_usage[block].health) {
-//    case HEALTHY:
-//      return (metadata->block_usage[block].state == SSD_BLOCK_INUSE);
-//    default:
-//      return 1;
-//  }
+  if (metadata->block_usage[block].health == HEALTHY) {
+    s->stat.hot_healthy++;
+  } else if (metadata->block_usage[block].health == UNHEALTHY) {
+    s->stat.hot_unhealthy++;
+  }
   return 1;
 }
 
