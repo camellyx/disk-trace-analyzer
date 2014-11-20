@@ -125,7 +125,7 @@ ssdmodel_ssd SSD {
      Reserve pages percentage = xxxxx,
      Unhealthy pages percentage = yyyyy,
      Hot percentage factor = zzzzz,
-     
+
      # vp - min percentage of free blocks needed. if the free 
      # blocks drop below this, cleaning kicks in
      Minimum free blocks percentage = 5,
@@ -135,7 +135,7 @@ ssdmodel_ssd SSD {
      Write policy = 2,
 
      # vp - random = 1 (not supp), greedy = 2, wear-aware = 3
-     Cleaning policy = 3,
+     Cleaning policy = 2,
 
      # vp - number of planes in each flash package (element)
      Planes per package = 8,
