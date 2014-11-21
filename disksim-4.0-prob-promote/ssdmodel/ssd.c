@@ -310,7 +310,7 @@ static void ssd_request_complete(ioreq_event *curr)
    ssd_t *currdisk;
    ioreq_event *x;
 
-   // fprintf (outputfile, "Entering ssd_request_complete: %12.6f\n", simtime);
+   // fprintf (stdout, "Entering ssd_request_complete: %12.6f\n", simtime);
 
    currdisk = getssd (curr->devno);
    ssd_assert_current_activity(currdisk, curr);
@@ -1153,27 +1153,39 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
    int i;
    int numbuswaits = 0;
    double waitingforbus = 0.0;
-   int hot_healthy = 0;
-   int hot_unhealthy = 0;
-   int cold_healthy = 0;
-   int cold_unhealthy = 0;
+   int hotcold = 0;
+   int hothot = 0;
+   int coldcold = 0;
+   int coldhot = 0;
+   int hotwrite = 0;
+   int coldwrite = 0;
+   int hotclean = 0;
+   int coldclean = 0;
 
    for (i=0; i<setsize; i++) {
       ssd_t *currdisk = getssd (set[i]);
       numbuswaits += currdisk->stat.numbuswaits;
       waitingforbus += currdisk->stat.waitingforbus;
-      hot_healthy += currdisk->stat.hot_healthy;
-      hot_unhealthy += currdisk->stat.hot_unhealthy;
-      cold_healthy += currdisk->stat.cold_healthy;
-      cold_unhealthy += currdisk->stat.cold_unhealthy;
+      hotcold += currdisk->stat.hotcold;
+      hothot += currdisk->stat.hothot;
+      coldcold += currdisk->stat.coldcold;
+      coldhot += currdisk->stat.coldhot;
+      hotwrite += currdisk->stat.hotwrite;
+      coldwrite += currdisk->stat.coldwrite;
+      hotclean += currdisk->stat.hotclean;
+      coldclean += currdisk->stat.coldclean;
    }
 
    fprintf(outputfile, "%sTotal bus wait time: %f\n", prefix, waitingforbus);
    fprintf(outputfile, "%sNumber of bus waits: %d\n", prefix, numbuswaits);
-   fprintf(outputfile, "%sHot healthy: %d\n", prefix, hot_healthy);
-   fprintf(outputfile, "%sHot unhealth: %d\n", prefix, hot_unhealthy);
-   fprintf(outputfile, "%sCold healthy: %d\n", prefix, cold_healthy);
-   fprintf(outputfile, "%sCold unhealth: %d\n", prefix, cold_unhealthy);
+   fprintf(outputfile, "@@@%sHot healthy: %d\n", prefix, hotcold);
+   fprintf(outputfile, "@@@%sHot unhealth: %d\n", prefix, hothot);
+   fprintf(outputfile, "@@@%sCold healthy: %d\n", prefix, coldcold);
+   fprintf(outputfile, "@@@%sCold unhealth: %d\n", prefix, coldhot);
+   fprintf(outputfile, "@@@%sHot write: %d\n", prefix, hotwrite);
+   fprintf(outputfile, "@@@%sCold write: %d\n", prefix, coldwrite);
+   fprintf(outputfile, "@@@%sHot clean: %d\n", prefix, hotclean);
+   fprintf(outputfile, "@@@%sCold clean: %d\n", prefix, coldclean);
 }
 
 void ssd_print_block_lifetime_distribution(int elem_num, ssd_t *s, int ssdno, double avg_lifetime, char *sourcestr)
@@ -1506,20 +1518,20 @@ int ssd_page_is_hot(ssd_t *s, ssd_element_metadata *metadata, int lpn) {
   unsigned int block = SSD_PAGE_TO_BLOCK(ppn, s);
   unsigned int plane = metadata->block_usage[block].plane_num;
   if (metadata->block_usage[block].health == HEALTHY && metadata->block_usage[block].state != SSD_BLOCK_INUSE) {
-    s->stat.cold_healthy++;
-    if (s->stat.cold_healthy % s->params.hot_percent_factor == 0) {
+    s->stat.coldcold++;
+    if (s->stat.coldcold % s->params.hot_percent_factor == 0) {
       return 1;
     }
     return 0;
   }
   if (metadata->block_usage[block].health == UNHEALTHY && metadata->plane_meta[plane].clean_in_block == block) {
-    s->stat.cold_unhealthy++;
+    s->stat.coldhot++;
     return 0;
   }
   if (metadata->block_usage[block].health == HEALTHY) {
-    s->stat.hot_healthy++;
+    s->stat.hotcold++;
   } else if (metadata->block_usage[block].health == UNHEALTHY) {
-    s->stat.hot_unhealthy++;
+    s->stat.hothot++;
   }
   return 1;
 }

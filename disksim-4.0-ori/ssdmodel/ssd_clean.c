@@ -701,6 +701,7 @@ static double ssd_clean_block_fully(int plane_num, int elem_num, ssd_t *s)
     ASSERT(metadata->block_usage[blk].plane_num == plane_num);
 
     cost = _ssd_clean_block_fully(blk, plane_num, elem_num, metadata, s);
+    s->stat.coldclean ++;
     return (cost+mcost);
 }
 

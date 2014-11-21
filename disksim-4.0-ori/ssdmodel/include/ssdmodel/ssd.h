@@ -30,6 +30,15 @@ typedef struct {
    double  requestedbus;
    double  waitingforbus;
    int     numbuswaits;
+
+   int hotcold;
+   int hothot;
+   int coldcold;
+   int coldhot;
+   int hotwrite;
+   int coldwrite;
+   int hotclean;
+   int coldclean;
 } ssd_stat_t;
 
 /*

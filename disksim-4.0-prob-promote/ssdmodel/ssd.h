@@ -35,10 +35,14 @@ typedef struct {
    double  waitingforbus;
    int     numbuswaits;
 
-   int hot_healthy;
-   int hot_unhealthy;
-   int cold_healthy;
-   int cold_unhealthy;
+   int hotcold;
+   int hothot;
+   int coldcold;
+   int coldhot;
+   int hotwrite;
+   int coldwrite;
+   int hotclean;
+   int coldclean;
 } ssd_stat_t;
 
 /*

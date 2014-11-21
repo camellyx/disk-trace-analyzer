@@ -1153,15 +1153,39 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
    int i;
    int numbuswaits = 0;
    double waitingforbus = 0.0;
+   int hotcold = 0;
+   int hothot = 0;
+   int coldcold = 0;
+   int coldhot = 0;
+   int hotwrite = 0;
+   int coldwrite = 0;
+   int hotclean = 0;
+   int coldclean = 0;
 
    for (i=0; i<setsize; i++) {
       ssd_t *currdisk = getssd (set[i]);
       numbuswaits += currdisk->stat.numbuswaits;
       waitingforbus += currdisk->stat.waitingforbus;
+      hotcold += currdisk->stat.hotcold;
+      hothot += currdisk->stat.hothot;
+      coldcold += currdisk->stat.coldcold;
+      coldhot += currdisk->stat.coldhot;
+      hotwrite += currdisk->stat.hotwrite;
+      coldwrite += currdisk->stat.coldwrite;
+      hotclean += currdisk->stat.hotclean;
+      coldclean += currdisk->stat.coldclean;
    }
 
    fprintf(outputfile, "%sTotal bus wait time: %f\n", prefix, waitingforbus);
    fprintf(outputfile, "%sNumber of bus waits: %d\n", prefix, numbuswaits);
+   fprintf(outputfile, "@@@%sHot healthy: %d\n", prefix, hotcold);
+   fprintf(outputfile, "@@@%sHot unhealth: %d\n", prefix, hothot);
+   fprintf(outputfile, "@@@%sCold healthy: %d\n", prefix, coldcold);
+   fprintf(outputfile, "@@@%sCold unhealth: %d\n", prefix, coldhot);
+   fprintf(outputfile, "@@@%sHot write: %d\n", prefix, hotwrite);
+   fprintf(outputfile, "@@@%sCold write: %d\n", prefix, coldwrite);
+   fprintf(outputfile, "@@@%sHot clean: %d\n", prefix, hotclean);
+   fprintf(outputfile, "@@@%sCold clean: %d\n", prefix, coldclean);
 }
 
 void ssd_print_block_lifetime_distribution(int elem_num, ssd_t *s, int ssdno, double avg_lifetime, char *sourcestr)

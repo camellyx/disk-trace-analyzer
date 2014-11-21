@@ -25,10 +25,14 @@ static void ssd_statinit (int devno, int firsttime)
    currdisk->stat.waitingforbus = 0.0;
    currdisk->stat.numbuswaits = 0;
 
-   currdisk->stat.hot_healthy= 0;
-   currdisk->stat.hot_unhealthy= 0;
-   currdisk->stat.cold_healthy= 0;
-   currdisk->stat.cold_unhealthy= 0;
+   currdisk->stat.hotcold = 0;
+   currdisk->stat.hothot = 0;
+   currdisk->stat.coldcold = 0;
+   currdisk->stat.coldhot = 0;
+   currdisk->stat.hotwrite = 0;
+   currdisk->stat.coldwrite = 0;
+   currdisk->stat.hotclean = 0;
+   currdisk->stat.coldclean = 0;
 }
 
 void ssd_initialize_diskinfo ()
