@@ -1,5 +1,5 @@
 
-*** Output file name: ssd-postmark-window-40-35.outv
+*** Output file name: results/window/ssd-postmark-window-40-35.outv
 *** Input trace format: ascii
 *** I/O trace used: ssd-postmark-aligned2.trace
 *** Synthgen to be used?: 0
@@ -119,7 +119,7 @@ Reserve pages percentage = 40,
 Unhealthy pages percentage = 35,
 Minimum free blocks percentage = 5,
 Write policy = 2,
-Cleaning policy = 3,
+Cleaning policy = 2,
 Planes per package = 8,
 Blocks per plane = 2048,
 Plane block mapping = 3,
@@ -156,7 +156,7 @@ Scheduling priority scheme = 0,
 Priority scheduling = 1
    },
 Timing model = 1,
-Chip xfer latency = 0.000025,
+Chip xfer latency = 0.000013,
 Page read latency = 0.025000,
 Page write latency = 0.200000,
 Block erase latency = 1.500000

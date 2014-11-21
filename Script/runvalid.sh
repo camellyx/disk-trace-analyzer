@@ -63,18 +63,18 @@ for x in 10 15 20 25 30 35 40; do
       for z in 1 2 4 8 12 16 20 24; do
         # prob-promote
         mkdir -p $RESULTFOLDER/prob-promote
-        sed "s:xxxxx:$x:" $TEMPLATEFOLDER/prob-promote-template.parv | sed "s:yyyyy:$y:" | sed "s:zzzz:$z:" > $TEMPLATEFOLDER/prob-promote-$x-$y-${z}.parv
+        sed "s:xxxxx:$x:" $TEMPLATEFOLDER/prob-promote-template.parv | sed "s:yyyyy:$y:" | sed "s:zzzzz:$z:" > $TEMPLATEFOLDER/prob-promote-$x-$y-${z}.parv
   
         echo "---Running tests with the real traces---"
         echo ""
   
         echo "IOzone: average SSD response time should be around 6.394276 ms"
-        $PROBPREFIX/disksim $TEMPLATEFOLDER/prob-promote-$x-y-${z}.parv $RESULTFOLDER/prob-promote/ssd-iozone-prob-promote-$x-y-${z}.outv ascii ssd-iozone-aligned2-100K.trace 0 
-        grep "ssd Response time average:" $RESULTFOLDER/prob-promote/ssd-iozone-prob-promote-$x-y-${z}.outv | grep -v "#"
+        $PROBPREFIX/disksim $TEMPLATEFOLDER/prob-promote-$x-$y-${z}.parv $RESULTFOLDER/prob-promote/ssd-iozone-prob-promote-$x-$y-${z}.outv ascii ssd-iozone-aligned2-100K.trace 0 
+        grep "ssd Response time average:" $RESULTFOLDER/prob-promote/ssd-iozone-prob-promote-$x-$y-${z}.outv | grep -v "#"
   
         echo "Postmark: average SSD response time should be around 4.140330 ms"
-        $PROBPREFIX/disksim $TEMPLATEFOLDER/prob-promote-$x-y-${z}.parv $RESULTFOLDER/prob-promote/ssd-postmark-prob-promote-$x-y-${z}.outv ascii ssd-postmark-aligned2.trace 0 
-        grep "ssd Response time average:" $RESULTFOLDER/prob-promote/ssd-postmark-prob-promote-$x-y-${z}.outv | grep -v "#"
+        $PROBPREFIX/disksim $TEMPLATEFOLDER/prob-promote-$x-$y-${z}.parv $RESULTFOLDER/prob-promote/ssd-postmark-prob-promote-$x-$y-${z}.outv ascii ssd-postmark-aligned2.trace 0 
+        grep "ssd Response time average:" $RESULTFOLDER/prob-promote/ssd-postmark-prob-promote-$x-$y-${z}.outv | grep -v "#"
 
       done
     fi
