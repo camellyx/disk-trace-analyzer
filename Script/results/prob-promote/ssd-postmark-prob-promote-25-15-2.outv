@@ -4112,10 +4112,14 @@ System logorg #0 ssd Access time distribution
  3466773    2000    4158    9214       0       0       0       0       0       0 
 System logorg #0 ssd Total bus wait time: 0.000000
 System logorg #0 ssd Number of bus waits: 0
-System logorg #0 ssd Hot healthy: 5746
-System logorg #0 ssd Hot unhealth: 869352
-System logorg #0 ssd Cold healthy: 3488642
-System logorg #0 ssd Cold unhealth: 840006
+@@@System logorg #0 ssd Hot healthy: 5746
+@@@System logorg #0 ssd Hot unhealth: 869352
+@@@System logorg #0 ssd Cold healthy: 3488642
+@@@System logorg #0 ssd Cold unhealth: 840006
+@@@System logorg #0 ssd Hot write: 2181870
+@@@System logorg #0 ssd Cold write: 840006
+@@@System logorg #0 ssd Hot clean: 16022
+@@@System logorg #0 ssd Cold clean: 5864
 
 IODRIVER STATISTICS
 -------------------
@@ -7811,10 +7815,14 @@ ssd Access time distribution
  3466773    2000    4158    9214       0       0       0       0       0       0 
 ssd Total bus wait time: 0.000000
 ssd Number of bus waits: 0
-ssd Hot healthy: 5746
-ssd Hot unhealth: 869352
-ssd Cold healthy: 3488642
-ssd Cold unhealth: 840006
+@@@ssd Hot healthy: 5746
+@@@ssd Hot unhealth: 869352
+@@@ssd Cold healthy: 3488642
+@@@ssd Cold unhealth: 840006
+@@@ssd Hot write: 2181870
+@@@ssd Cold write: 840006
+@@@ssd Hot clean: 16022
+@@@ssd Cold clean: 5864
 
 
 SSD CLEANING STATISTICS
@@ -24351,10 +24359,14 @@ ssd #0 Access time distribution
  3466773    2000    4158    9214       0       0       0       0       0       0 
 ssd #0 Total bus wait time: 0.000000
 ssd #0 Number of bus waits: 0
-ssd #0 Hot healthy: 5746
-ssd #0 Hot unhealth: 869352
-ssd #0 Cold healthy: 3488642
-ssd #0 Cold unhealth: 840006
+@@@ssd #0 Hot healthy: 5746
+@@@ssd #0 Hot unhealth: 869352
+@@@ssd #0 Cold healthy: 3488642
+@@@ssd #0 Cold unhealth: 840006
+@@@ssd #0 Hot write: 2181870
+@@@ssd #0 Cold write: 840006
+@@@ssd #0 Hot clean: 16022
+@@@ssd #0 Cold clean: 5864
 
 
 
