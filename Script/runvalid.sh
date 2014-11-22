@@ -60,7 +60,7 @@ for x in 10 15 20 25 30 35 40; do
       $WINPREFIX/disksim $TEMPLATEFOLDER/window-$x-${y}.parv $RESULTFOLDER/window/ssd-postmark-window-$x-${y}.outv ascii ssd-postmark-aligned2.trace 0 
       grep "ssd Response time average:" $RESULTFOLDER/window/ssd-postmark-window-$x-${y}.outv | grep -v "#"
 
-      for z in 1 2 4 8 12 16 20 24; do
+      for z in 0 1 2 4 8 16 32; do
         # prob-promote
         mkdir -p $RESULTFOLDER/prob-promote
         sed "s:xxxxx:$x:" $TEMPLATEFOLDER/prob-promote-template.parv | sed "s:yyyyy:$y:" | sed "s:zzzzz:$z:" > $TEMPLATEFOLDER/prob-promote-$x-$y-${z}.parv
