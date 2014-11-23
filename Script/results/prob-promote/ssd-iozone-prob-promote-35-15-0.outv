@@ -4112,10 +4112,10 @@ System logorg #0 ssd Access time distribution
  9101591       0       0       0       0       0       0       0       0       0 
 System logorg #0 ssd Total bus wait time: 0.000000
 System logorg #0 ssd Number of bus waits: 0
-@@@System logorg #0 ssd Hot healthy: 188572
+@@@System logorg #0 ssd Hot healthy: 72
 @@@System logorg #0 ssd Hot unhealth: 11155394
 @@@System logorg #0 ssd Cold healthy: 6651808
-@@@System logorg #0 ssd Cold unhealth: 72
+@@@System logorg #0 ssd Cold unhealth: 188572
 @@@System logorg #0 ssd Hot write: 5671983
 @@@System logorg #0 ssd Cold write: 3325976
 @@@System logorg #0 ssd Hot clean: 71451
@@ -7815,10 +7815,10 @@ ssd Access time distribution
  9101591       0       0       0       0       0       0       0       0       0 
 ssd Total bus wait time: 0.000000
 ssd Number of bus waits: 0
-@@@ssd Hot healthy: 188572
+@@@ssd Hot healthy: 72
 @@@ssd Hot unhealth: 11155394
 @@@ssd Cold healthy: 6651808
-@@@ssd Cold unhealth: 72
+@@@ssd Cold unhealth: 188572
 @@@ssd Hot write: 5671983
 @@@ssd Cold write: 3325976
 @@@ssd Hot clean: 71451
@@ -24359,10 +24359,10 @@ ssd #0 Access time distribution
  9101591       0       0       0       0       0       0       0       0       0 
 ssd #0 Total bus wait time: 0.000000
 ssd #0 Number of bus waits: 0
-@@@ssd #0 Hot healthy: 188572
+@@@ssd #0 Hot healthy: 72
 @@@ssd #0 Hot unhealth: 11155394
 @@@ssd #0 Cold healthy: 6651808
-@@@ssd #0 Cold unhealth: 72
+@@@ssd #0 Cold unhealth: 188572
 @@@ssd #0 Hot write: 5671983
 @@@ssd #0 Cold write: 3325976
 @@@ssd #0 Hot clean: 71451

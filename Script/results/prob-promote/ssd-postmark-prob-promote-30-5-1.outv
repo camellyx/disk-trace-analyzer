@@ -4112,10 +4112,10 @@ System logorg #0 ssd Access time distribution
  3460846    1129    4068   23023       0       0       0       0       0       0 
 System logorg #0 ssd Total bus wait time: 0.000000
 System logorg #0 ssd Number of bus waits: 0
-@@@System logorg #0 ssd Hot healthy: 2116
+@@@System logorg #0 ssd Hot healthy: 1687129
 @@@System logorg #0 ssd Hot unhealth: 273032
-@@@System logorg #0 ssd Cold healthy: 4088592
-@@@System logorg #0 ssd Cold unhealth: 1687129
+@@@System logorg #0 ssd Cold healthy: 0
+@@@System logorg #0 ssd Cold unhealth: 4090708
 @@@System logorg #0 ssd Hot write: 2181870
 @@@System logorg #0 ssd Cold write: 1687129
 @@@System logorg #0 ssd Hot clean: 28492
@@ -7815,10 +7815,10 @@ ssd Access time distribution
  3460846    1129    4068   23023       0       0       0       0       0       0 
 ssd Total bus wait time: 0.000000
 ssd Number of bus waits: 0
-@@@ssd Hot healthy: 2116
+@@@ssd Hot healthy: 1687129
 @@@ssd Hot unhealth: 273032
-@@@ssd Cold healthy: 4088592
-@@@ssd Cold unhealth: 1687129
+@@@ssd Cold healthy: 0
+@@@ssd Cold unhealth: 4090708
 @@@ssd Hot write: 2181870
 @@@ssd Cold write: 1687129
 @@@ssd Hot clean: 28492
@@ -24359,10 +24359,10 @@ ssd #0 Access time distribution
  3460846    1129    4068   23023       0       0       0       0       0       0 
 ssd #0 Total bus wait time: 0.000000
 ssd #0 Number of bus waits: 0
-@@@ssd #0 Hot healthy: 2116
+@@@ssd #0 Hot healthy: 1687129
 @@@ssd #0 Hot unhealth: 273032
-@@@ssd #0 Cold healthy: 4088592
-@@@ssd #0 Cold unhealth: 1687129
+@@@ssd #0 Cold healthy: 0
+@@@ssd #0 Cold unhealth: 4090708
 @@@ssd #0 Hot write: 2181870
 @@@ssd #0 Cold write: 1687129
 @@@ssd #0 Hot clean: 28492
