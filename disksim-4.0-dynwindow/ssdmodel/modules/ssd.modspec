@@ -138,10 +138,6 @@ PARAM Unhealthy pages percentage	I	1
 TEST (i >= 0)
 INIT result->params.unhealthy_blocks = i;
 
-PARAM Hot percentage factor	I	1
-TEST (i >= 0)
-INIT result->params.hot_percent_factor = i;
-
 PARAM Cold to hot window size	I	1
 TEST (i >= 0)
 INIT result->params.window_size = i;

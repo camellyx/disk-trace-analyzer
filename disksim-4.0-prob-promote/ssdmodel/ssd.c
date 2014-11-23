@@ -1518,20 +1518,21 @@ int ssd_page_is_hot(ssd_t *s, ssd_element_metadata *metadata, int lpn) {
   unsigned int block = SSD_PAGE_TO_BLOCK(ppn, s);
   unsigned int plane = metadata->block_usage[block].plane_num;
   if (metadata->block_usage[block].health == HEALTHY && metadata->block_usage[block].state != SSD_BLOCK_INUSE) {
-    s->stat.coldcold++;
-    if (s->stat.coldcold % s->params.hot_percent_factor == 0) {
+    if (s->params.hot_percent_factor != 0 && s->stat.coldcold % s->params.hot_percent_factor == 0) {
+      s->stat.coldhot ++;
       return 1;
     }
+    s->stat.coldcold ++;
     return 0;
   }
   if (metadata->block_usage[block].health == UNHEALTHY && metadata->plane_meta[plane].clean_in_block == block) {
-    s->stat.coldhot++;
+    s->stat.hotcold ++;
     return 0;
   }
   if (metadata->block_usage[block].health == HEALTHY) {
-    s->stat.hotcold++;
+    s->stat.coldhot ++;
   } else if (metadata->block_usage[block].health == UNHEALTHY) {
-    s->stat.hothot++;
+    s->stat.hothot ++;
   }
   return 1;
 }
