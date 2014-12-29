@@ -305,6 +305,8 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
     unsigned int pagepos_in_block = active_page % s->params.pages_per_block;
     unsigned int active_plane = metadata->block_usage[active_block].plane_num;
 
+    s->stat.coldwrite++;
+
     // see if this logical page no is already mapped.
     if (metadata->lba_table[lpn] != -1) {
 

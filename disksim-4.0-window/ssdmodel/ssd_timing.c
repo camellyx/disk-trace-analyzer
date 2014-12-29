@@ -317,11 +317,13 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
         active_block = SSD_PAGE_TO_BLOCK(active_page, s);
         pagepos_in_block = active_page % s->params.pages_per_block;
         active_plane = metadata->block_usage[active_block].plane_num;
+        s->stat.hotwrite ++;
     } else {
         active_page = metadata->active_healthy_page;
         active_block = SSD_PAGE_TO_BLOCK(active_page, s);
         pagepos_in_block = active_page % s->params.pages_per_block;
         active_plane = metadata->block_usage[active_block].plane_num;
+        s->stat.coldwrite ++;
     }
 
     // see if this logical page no is already mapped.

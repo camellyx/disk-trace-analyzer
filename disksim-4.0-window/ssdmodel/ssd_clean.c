@@ -57,8 +57,10 @@ static double ssd_move_page(int lpn, int from_blk, int plane_num, int elem_num, 
             break;
 
         case SSD_COPY_BACK_ENABLE:
-            ASSERT(metadata->plane_meta[plane_num].active_page == metadata->active_page);
-            ASSERT(metadata->plane_meta[plane_num].active_healthy_page == metadata->active_healthy_page);
+            ASSERT(metadata->plane_meta[plane_num].active_page ==
+                metadata->active_page ||
+                metadata->plane_meta[plane_num].active_healthy_page ==
+                metadata->active_healthy_page);
             if (ssd_last_page_in_block(metadata->active_page, s)) {
                 _ssd_alloc_active_block(plane_num, elem_num, s);
             }
@@ -1041,6 +1043,7 @@ double ssd_clean_element_copyback_healthy(int elem_num, ssd_t *s)
                 metadata->plane_meta[plane_num].clean_in_block = -1;
             }
 
+            metadata->active_page = metadata->plane_meta[plane_num].active_page;
             metadata->active_healthy_page = metadata->plane_meta[plane_num].active_healthy_page;
             cleaning_cost = ssd_clean_plane_copyback(plane_num, elem_num, s, HEALTHY);
 
@@ -1087,6 +1090,7 @@ double ssd_clean_element_copyback_unhealthy(int elem_num, ssd_t *s)
             }
 
             metadata->active_page = metadata->plane_meta[plane_num].active_page;
+            metadata->active_healthy_page = metadata->plane_meta[plane_num].active_healthy_page;
             cleaning_cost = ssd_clean_plane_copyback(plane_num, elem_num, s, UNHEALTHY);
 
             tot_cleans ++;

@@ -133,13 +133,13 @@ ssdmodel_ssd SSD {
      Write policy = 2,
 
      # vp - random = 1 (not supp), greedy = 2, wear-aware = 3
-     Cleaning policy = 3,
+     Cleaning policy = 2,
 
      # vp - number of planes in each flash package (element)
      Planes per package = 8,
 
      # vp - number of flash blocks in each plane
-     Blocks per plane = 2048,
+     Blocks per plane = 8192,
 
      # vp - how the blocks within an element are mapped on a plane
      # simple concatenation = 1, plane-pair stripping = 2 (not tested),
@@ -164,7 +164,7 @@ ssdmodel_ssd SSD {
      Gang share = 1,
 
      # when do we want to do the cleaning?
-     Cleaning in background = 0,
+     Cleaning in background = 1,
 
      Command overhead =  0.00,
      Bus transaction latency =  0.0,
@@ -176,14 +176,14 @@ ssdmodel_ssd SSD {
 #    from disksim_bus above.
      Bulk sector transfer time =  0,
 
-     Flash chip elements = 8,
+     Flash chip elements = 4,
 
      Page size = 8,
 
-     Pages per block = 64,
+     Pages per block = 128,
 
      # vp - changing the no of blocks from 16184 to 16384
-     Blocks per element = 16384,
+     Blocks per element = 65536,
 
      Element stride pages = 1,
 
